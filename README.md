@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.1.0` 只做 Shadowrocket 小火箭简化版。
+面向手机端的代理分流规则包。当前 `v0.1.1` 只做 Shadowrocket 小火箭简化版。
 
 这个项目只提供规则和说明，**不包含任何订阅、节点、账号、密码或 token**。使用者必须先在 Shadowrocket 里导入自己的订阅。
 
@@ -40,6 +40,14 @@ scripts/
 
 ## 小火箭快速使用
 
+手机入口页：
+
+```text
+https://reroc8.github.io/mobile-proxy-share-kit/
+```
+
+最短流程：
+
 1. 在 Shadowrocket 里先导入自己的订阅。
 2. 建立或确认这些策略名字存在：`Claude / AI / Google / YouTube / Exchange / Telegram / Proxy`。
 3. 把节点放进对应策略：
@@ -61,6 +69,7 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocke
 
 - `blackmatrix7/ios_rule_script`：参考其 OpenAI、Claude、Gemini、Copilot 等专项规则覆盖思路。
 - `Hackl0us/SS-Rule-Snippet`：只参考其 Shadowrocket 懒人配置的导入形式。
+- `Johnshall/Shadowrocket-ADBlock-Rules-Forever`：只参考其手机入口、二维码和多规则发布说明方式。
 
 本项目没有照搬通用懒人整包，规则目标不同：
 

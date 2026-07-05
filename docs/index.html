@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shadowrocket AI 风控稳定规则</title>
+  <meta name="description" content="Shadowrocket 小火箭 AI 风控稳定简化规则：Claude 独立美区，ChatGPT/Gemini 等 AI 独立分流。">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1d2430;
+      --muted: #5f6b7a;
+      --line: #d8dee8;
+      --accent: #1264d8;
+      --accent-soft: #e7f0ff;
+      --warn: #8a4b00;
+      --warn-bg: #fff4de;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101318;
+        --panel: #181d24;
+        --text: #edf1f7;
+        --muted: #a9b2c0;
+        --line: #2b3340;
+        --accent: #7db1ff;
+        --accent-soft: #17263d;
+        --warn: #ffd38a;
+        --warn-bg: #2d2414;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      margin: 14px 0;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.18;
+      margin: 0 0 10px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0 0 12px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    ol,
+    ul {
+      padding-left: 22px;
+      margin: 8px 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code {
+      background: var(--accent-soft);
+      color: var(--text);
+      border-radius: 5px;
+      padding: 2px 5px;
+      word-break: break-word;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .button {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      color: #ffffff;
+      background: var(--accent);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-weight: 700;
+    }
+
+    .secondary {
+      color: var(--text);
+      background: var(--accent-soft);
+      border: 1px solid var(--line);
+    }
+
+    .url {
+      overflow-wrap: anywhere;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .qr-wrap {
+      display: grid;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .qr {
+      width: 220px;
+      height: 220px;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 8px;
+    }
+
+    .warn {
+      color: var(--warn);
+      background: var(--warn-bg);
+      border-color: rgba(138, 75, 0, 0.25);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border-top: 1px solid var(--line);
+      padding: 9px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    @media (min-width: 640px) {
+      .qr-wrap {
+        grid-template-columns: 240px 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h1>Shadowrocket AI 风控稳定规则</h1>
+      <p class="lead">核心目标只有一个：让 Claude、ChatGPT、Gemini 等 AI 服务走清晰、稳定的策略组，不和普通 Google / YouTube / Proxy 混在一起。</p>
+      <div class="actions">
+        <a class="button" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.conf">打开规则文件</a>
+        <a class="button secondary" href="https://github.com/reroc8/mobile-proxy-share-kit">查看 GitHub 项目</a>
+      </div>
+      <p class="url">规则链接：https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.conf</p>
+    </section>
+
+    <section class="warn">
+      <h2>先看这一句</h2>
+      <p>这不是节点订阅，不含任何节点。你必须先在 Shadowrocket 导入自己的订阅，再使用这份规则。</p>
+      <p>这也不是去广告规则。基础版不启用广告拦截，优先减少登录、验证码、支付、AI 风控接口误伤。</p>
+    </section>
+
+    <section>
+      <h2>三步使用</h2>
+      <ol>
+        <li>先在 Shadowrocket 导入自己的订阅。</li>
+        <li>准备这些策略名：<code>Claude</code>、<code>AI</code>、<code>Google</code>、<code>YouTube</code>、<code>Exchange</code>、<code>Telegram</code>、<code>Proxy</code>。</li>
+        <li>导入本页面的规则链接，然后断开并重新连接 Shadowrocket。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>节点怎么放</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>策略名</th>
+            <th>建议放入的节点</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>Claude</code></td><td>只放美国节点。</td></tr>
+          <tr><td><code>AI</code></td><td>美国节点优先，台湾节点备用。</td></tr>
+          <tr><td><code>Exchange</code></td><td>台湾、新加坡节点。</td></tr>
+          <tr><td><code>Google</code></td><td>Google / Gmail 稳定的节点。</td></tr>
+          <tr><td><code>YouTube</code></td><td>看视频稳定的节点。</td></tr>
+          <tr><td><code>Telegram</code></td><td>常用稳定节点。</td></tr>
+          <tr><td><code>Proxy</code></td><td>普通代理节点。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>扫码导入</h2>
+      <div class="qr-wrap">
+        <img class="qr" alt="Shadowrocket 规则导入二维码" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;margin=10&amp;data=https%3A%2F%2Fraw.githubusercontent.com%2Freroc8%2Fmobile-proxy-share-kit%2Fmain%2Fshadowrocket%2FShadowrocket.conf">
+        <div>
+          <p>用另一台设备打开本页，然后用 iPhone 扫这个二维码。</p>
+          <p>如果二维码打不开，直接复制上面的规则链接到 Shadowrocket 的配置下载入口。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>60 秒检查</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>检查</th>
+            <th>打开</th>
+            <th>先看哪里</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Claude</td><td><code>claude.ai</code></td><td><code>Claude</code> 只选美国节点。</td></tr>
+          <tr><td>ChatGPT</td><td><code>chatgpt.com</code></td><td><code>AI</code> 先选美国节点。</td></tr>
+          <tr><td>Gemini</td><td><code>gemini.google.com</code></td><td><code>AI</code> 不要混普通 Google 节点。</td></tr>
+          <tr><td>Google</td><td><code>google.com</code> 或 Gmail</td><td><code>Google</code> 换稳定节点。</td></tr>
+          <tr><td>YouTube</td><td><code>youtube.com</code></td><td><code>YouTube</code> 换视频稳定节点。</td></tr>
+          <tr><td>交易所</td><td>OKX / Bybit / Binance</td><td><code>Exchange</code> 只选台湾/新加坡。</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
