@@ -37,13 +37,14 @@ fi
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/docs"
+mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/docs/assets"
 cp "$ROOT_DIR/README.md" "$TMP_DIR/README.md"
 cp "$ROOT_DIR/VERSION.txt" "$TMP_DIR/VERSION.txt"
 cp "$ROOT_DIR/CHANGELOG.md" "$TMP_DIR/CHANGELOG.md"
 cp "$ROOT_DIR/shadowrocket/README.md" "$TMP_DIR/shadowrocket/README.md"
-cp "$ROOT_DIR/shadowrocket/Shadowrocket.conf" "$TMP_DIR/shadowrocket/Shadowrocket.conf"
+cp "$ROOT_DIR/shadowrocket/"*.conf "$TMP_DIR/shadowrocket/"
 cp "$ROOT_DIR/docs/index.html" "$TMP_DIR/docs/index.html"
+cp "$ROOT_DIR/docs/assets/shadowrocket-full-qr.png" "$TMP_DIR/docs/assets/shadowrocket-full-qr.png"
 
 ZIP_NAME="mobile-proxy-share-kit-${VERSION}.zip"
 rm -f "$DIST_DIR/$ZIP_NAME"

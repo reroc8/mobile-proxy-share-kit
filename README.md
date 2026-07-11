@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.1.1` 只做 Shadowrocket 小火箭简化版。
+面向手机端的代理分流规则包。当前 `v0.1.2` 只做 Shadowrocket 小火箭简化版。
 
 这个项目只提供规则和说明，**不包含任何订阅、节点、账号、密码或 token**。使用者必须先在 Shadowrocket 里导入自己的订阅。
 
@@ -12,6 +12,7 @@
 
 - Claude 单独走 `Claude`，建议只放美国节点。
 - ChatGPT / OpenAI / Gemini / Perplexity / Copilot / Cursor 等走 `AI`，建议美国优先，台湾备用。
+- DeepSeek / Kimi / Moonshot 等国内 AI 直连，不混入国际 AI 风控路径。
 - Gemini 先命中 `AI`，不会被普通 Google 规则抢走。
 - Google 登录、Gmail、OAuth 走 `Google`。
 - YouTube / googlevideo / ytimg 走 `YouTube`。
@@ -31,6 +32,8 @@
 ```text
 shadowrocket/
   Shadowrocket.conf
+  Shadowrocket.full.conf
+  Shadowrocket.rules.conf
   README.md
 
 scripts/
@@ -49,19 +52,26 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 最短流程：
 
 1. 在 Shadowrocket 里先导入自己的订阅。
-2. 建立或确认这些策略名字存在：`Claude / AI / Google / YouTube / Exchange / Telegram / Proxy`。
-3. 把节点放进对应策略：
+2. 导入完整骨架模板：
+
+```text
+https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf
+```
+
+3. 把自己的节点放进对应策略：
    - `Claude`：只放美国节点。
    - `AI`：美国节点优先，台湾节点备用。
    - `Exchange`：台湾、新加坡节点。
    - `Google / YouTube / Telegram / Proxy`：放你常用稳定节点。
-4. 导入规则：
+4. 测试 Claude、ChatGPT/Gemini、Google、YouTube、交易所、国内网站。
+
+高级用户如果已经自己建好了策略组，也可以只导入纯规则片段：
 
 ```text
-https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.conf
+https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.rules.conf
 ```
 
-5. 测试 Claude、ChatGPT/Gemini、Google、YouTube、交易所、国内网站。
+旧链接 `Shadowrocket.conf` 会继续保留，等同于纯规则片段，用来兼容已经保存过的二维码或书签。
 
 ## 参考来源
 

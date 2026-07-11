@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.2
+
+- 拆分 Shadowrocket 使用入口：小白优先用 `Shadowrocket.full.conf` 完整骨架模板，高级用户可用 `Shadowrocket.rules.conf` 纯规则片段。
+- `Shadowrocket.conf` 保留为旧链接兼容文件，内容仍是纯规则片段，不包含节点或订阅。
+- 收窄 AI 规则：移除 Cloudflare、Statsig、Bing、Google 通用支撑域对 `AI` 策略的误绑。
+- 国内 AI 服务改为直连：DeepSeek、Kimi、Moonshot 不再进入国际 `AI` 策略。
+- 修复未安装 `rg` 时敏感信息扫描可能扫到脚本自身的问题。
+- GitHub Pages 二维码改为本地静态图片，不再依赖第三方二维码服务。
+
 ## v0.1.1
 
 - 增加 GitHub Pages 手机入口页，方便 iPhone 用户打开后复制规则链接或扫码。

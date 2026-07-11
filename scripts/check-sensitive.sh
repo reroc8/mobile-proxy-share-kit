@@ -6,13 +6,21 @@ PATTERN='(ss://[A-Za-z0-9+/=_-]{8,}|ssr://[A-Za-z0-9+/=_-]{8,}|vmess://[A-Za-z0-
 
 cd "$ROOT_DIR"
 
+SCAN_PATHS=(
+    README.md
+    CHANGELOG.md
+    VERSION.txt
+    shadowrocket
+    docs
+)
+
 if command -v rg >/dev/null 2>&1; then
-    if rg -n -i "$PATTERN" --glob '!dist/**' --glob '!.git/**' --glob '!scripts/check-sensitive.sh' .; then
+    if rg -n -i "$PATTERN" "${SCAN_PATHS[@]}"; then
         echo "错误: 发现疑似订阅或节点敏感信息"
         exit 1
     fi
 else
-    if grep -RInEi "$PATTERN" . --exclude=scripts/check-sensitive.sh --exclude-dir=.git --exclude-dir=dist; then
+    if find "${SCAN_PATHS[@]}" -type f -print0 | xargs -0 grep -nEi "$PATTERN"; then
         echo "错误: 发现疑似订阅或节点敏感信息"
         exit 1
     fi

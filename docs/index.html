@@ -182,15 +182,16 @@
       <h1>Shadowrocket AI 风控稳定规则</h1>
       <p class="lead">核心目标只有一个：让 Claude、ChatGPT、Gemini 等 AI 服务走清晰、稳定的策略组，不和普通 Google / YouTube / Proxy 混在一起。</p>
       <div class="actions">
-        <a class="button" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.conf">打开规则文件</a>
+        <a class="button" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf">打开完整骨架模板</a>
+        <a class="button secondary" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.rules.conf">高级用户：只打开规则片段</a>
         <a class="button secondary" href="https://github.com/reroc8/mobile-proxy-share-kit">查看 GitHub 项目</a>
       </div>
-      <p class="url">规则链接：https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.conf</p>
+      <p class="url">模板链接：https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf</p>
     </section>
 
     <section class="warn">
       <h2>先看这一句</h2>
-      <p>这不是节点订阅，不含任何节点。你必须先在 Shadowrocket 导入自己的订阅，再使用这份规则。</p>
+      <p>这不是节点订阅，不含任何节点。你必须先在 Shadowrocket 导入自己的订阅，再使用这份模板或规则。</p>
       <p>这也不是去广告规则。基础版不启用广告拦截，优先减少登录、验证码、支付、AI 风控接口误伤。</p>
     </section>
 
@@ -198,8 +199,8 @@
       <h2>三步使用</h2>
       <ol>
         <li>先在 Shadowrocket 导入自己的订阅。</li>
-        <li>准备这些策略名：<code>Claude</code>、<code>AI</code>、<code>Google</code>、<code>YouTube</code>、<code>Exchange</code>、<code>Telegram</code>、<code>Proxy</code>。</li>
-        <li>导入本页面的规则链接，然后断开并重新连接 Shadowrocket。</li>
+        <li>导入本页面的完整骨架模板，然后断开并重新连接 Shadowrocket。</li>
+        <li>进入策略组，把自己的节点放到 <code>Claude</code>、<code>AI</code>、<code>Exchange</code> 等对应位置。</li>
       </ol>
     </section>
 
@@ -227,10 +228,10 @@
     <section>
       <h2>扫码导入</h2>
       <div class="qr-wrap">
-        <img class="qr" alt="Shadowrocket 规则导入二维码" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;margin=10&amp;data=https%3A%2F%2Fraw.githubusercontent.com%2Freroc8%2Fmobile-proxy-share-kit%2Fmain%2Fshadowrocket%2FShadowrocket.conf">
+        <img class="qr" alt="Shadowrocket 完整骨架模板导入二维码" src="assets/shadowrocket-full-qr.png">
         <div>
           <p>用另一台设备打开本页，然后用 iPhone 扫这个二维码。</p>
-          <p>如果二维码打不开，直接复制上面的规则链接到 Shadowrocket 的配置下载入口。</p>
+          <p>二维码指向完整骨架模板，不包含任何节点。导入后还要使用自己的订阅节点。</p>
         </div>
       </div>
     </section>
