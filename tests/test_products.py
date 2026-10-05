@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -311,6 +312,64 @@ class TestVersionConsistency(unittest.TestCase):
     def test_release_scripts_present(self) -> None:
         for relative in ("scripts/bump-version.py", "scripts/publish-release.sh"):
             self.assertTrue((REPO_ROOT / relative).is_file(), f"缺少 {relative}")
+
+
+def load_bump_tool():
+    """bump-version.py 文件名带连字符，不能直接 import，用 importlib 载入。"""
+    import importlib.util
+
+    path = REPO_ROOT / "scripts" / "bump-version.py"
+    spec = importlib.util.spec_from_file_location("bump_version", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class TestVersionsTrackRuleChanges(unittest.TestCase):
+    """每个版本号都必须对应一次真实的规则内容变化。
+
+    v0.3.2 ~ v0.3.5 连发了四个规则内容零变化的版本 —— 那段历史不再追认，
+    从这个边界之后的版本开始强制。所以这条断言现在会通过，但下次谁再发一个
+    「只改了脚本和文档」的版本，它就会红。
+    """
+
+    GUARD_FROM = "v0.3.5"
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.tool = load_bump_tool()
+        result = subprocess.run(
+            ["git", "tag"], cwd=REPO_ROOT, capture_output=True, text=True
+        )
+        cls.tags = result.stdout.split() if result.returncode == 0 else []
+
+    @staticmethod
+    def key(tag: str) -> tuple[int, ...]:
+        return tuple(int(part) for part in tag.lstrip("v").split("."))
+
+    def fingerprint_at(self, tag: str) -> str | None:
+        return self.tool.fingerprint(lambda rel: self.tool.read_git(tag, rel))
+
+    def test_consecutive_releases_change_rules(self) -> None:
+        if not self.tags:
+            self.skipTest("拿不到 git tag（浅克隆？），跳过")
+
+        guarded = sorted(
+            (tag for tag in self.tags if self.key(tag) >= self.key(self.GUARD_FROM)),
+            key=self.key,
+        )
+        self.assertTrue(guarded, f"没有 {self.GUARD_FROM} 之后的 tag")
+
+        for older, newer in zip(guarded, guarded[1:]):
+            before, after = self.fingerprint_at(older), self.fingerprint_at(newer)
+            self.assertIsNotNone(before, f"{older} 里取不到产物")
+            self.assertIsNotNone(after, f"{newer} 里取不到产物")
+            self.assertNotEqual(
+                before,
+                after,
+                f"{newer} 与 {older} 的规则内容完全相同 —— 版本号只该为规则变更而涨，"
+                "工程改动走普通提交即可",
+            )
 
 
 if __name__ == "__main__":

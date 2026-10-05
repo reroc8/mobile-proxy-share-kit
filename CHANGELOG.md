@@ -1,12 +1,20 @@
 # Changelog
 
-手机端和 PC 版（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit)）
-是**两套独立的版本号**，不要互相对照。手机端有自己的发布节奏（比如交易所分组是手机端独有的，
-PC 没有），版本号只表示手机端自己的变更。
+## 版本号怎么读
 
-每版对应的 PC 源版本记在下面，Shadowrocket 的 `.conf` 头部也会写一行 `# Source: ...`，
-一眼能看出这份规则是从 PC 的哪一版生成的。Karing 的 JSON 是 Karing 私有格式，
-不往里塞自定义字段（避免导入被拒），对应关系看这里的记录。
+**版本号只表示「规则内容」的版本** —— 域名、分组、分组顺序。改了这些才发新版本；
+测试、CI、脚本、文档这类工程改动走普通 commit，不占版本号。`scripts/bump-version.py`
+会在规则内容没变时拒绝改版本号。
+
+> **历史说明**：v0.3.2 ~ v0.3.5 这四版的规则内容与 v0.3.1 **完全相同**，
+> 属于「工程版本」（换规则源、加来源标注、加测试与 CI、加发版工具）。
+> 当时没有「只在规则变化时发版」这条规矩，所以版本号涨了四次而手机端拿到的规则没变。
+> 这些版本保留在历史里，不再追认。
+
+手机端和 PC 版（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit)）
+是**两套独立的版本号**。每版对应的 PC 源版本记在下面，Shadowrocket 的 `.conf` 头部也会写一行
+`# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
+对应关系看这里的记录。
 
 ## v0.3.5
 

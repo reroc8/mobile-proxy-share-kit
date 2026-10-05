@@ -119,12 +119,22 @@ docs/                           GitHub Pages 手机入口页
 
 ## 版本号怎么算
 
-手机端和 PC 版是**两套独立的版本号**，不要互相对照：
+**手机端的版本号只表示「规则内容」的版本。** 规则内容 = 域名、分组、分组顺序。
 
-- **手机端版本**（本仓库的 `VERSION.txt`）只表示手机端自己的变更。手机端有 PC 没有的东西（交易所分组、手机端导入流程），也有自己的发布节奏，所以走独立的语义化版本。
-- **PC 版版本**（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `VERSION.txt`）是规则内容的真源版本，目前是 `v0.3.34`。
+- **改了规则 → 发新版本。** 比如 PC 那边加了域名、或者手机端补了分组。
+- **没改规则 → 不发版本。** 测试、CI、脚本、文档、构建流程这类工程改动，走普通 commit 就行。
+  `scripts/bump-version.py` 会比对新旧两版的规则内容，完全相同就直接拒绝改版本号
+  （确实要发用 `--force`）。
 
-两套编号恰好都是 `v0.3.x`，但**没有任何对应关系**。想确认某份产物是从 PC 的哪一版生成的：
+  这条规矩是补上的：在它之前连续发过 v0.3.2 / v0.3.3 / v0.3.4 / v0.3.5 四个
+  **规则内容零变化**的版本，版本号看着在涨，其实手机端拿到的规则一模一样。
+
+手机端版本号和 PC 版**没有对应关系**，两套编号各管各的：
+
+- 手机端版本（本仓库的 `VERSION.txt`）管规则内容的迭代。
+- PC 版版本（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `VERSION.txt`）是规则来源的真源版本，目前是 `v0.3.34`。
+
+想知道某份产物是从 PC 哪一版生成的：
 
 - Shadowrocket 的 `.conf` 头部有一行 `# Source: reroc8/clash-verge-share-kit v0.3.34`。
 - Karing 的 JSON 是 Karing 私有格式，不往里加自定义字段（避免导入被拒），对应关系记在 `CHANGELOG.md` 每版条目里。

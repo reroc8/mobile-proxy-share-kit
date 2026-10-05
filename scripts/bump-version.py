@@ -2,13 +2,19 @@
 # -*- coding: utf-8 -*-
 """把仓库里所有位置的项目版本号统一改到指定版本。
 
-版本号散在 4 个文件里（VERSION.txt、README.md、karing/README.md、shadowrocket/README.md，
-再加上 CHANGELOG.md 的条目标题）。手工改漏一个就会出现「README 说 v0.3.3、
-VERSION.txt 说 v0.3.4」这种不一致 —— 已经漏过一次。所以改成一命令改全部，
-并用 tests/test_products.py 钉住一致性。
+**版本号的语义：它只表示「规则内容」的版本。**
+
+规则内容 = 域名、分组、顺序。改了这些才发新版本。
+测试、CI、脚本、文档这类工程改动走普通提交，不占版本号 —— 之前没这条规矩，
+连续发了 v0.3.2 / v0.3.3 / v0.3.4 / v0.3.5 四个产物内容零变化的版本，
+版本号看着在涨，其实什么都没变。
+
+脚本会拿当前版本的产物和上一版比；规则内容完全相同就直接拒绝，
+避免再出现「版本号涨了但规则没动」。
 
 用法：
-    python3 scripts/bump-version.py v0.3.5
+    python3 scripts/bump-version.py v0.3.6
+    python3 scripts/bump-version.py v0.3.6 --force   # 明知规则没变也要发
 
 CHANGELOG.md 不自动生成 —— 变更说明得人写。脚本只检查该版本标题是否已存在，
 没有就报错，避免出现「版本号改了但 CHANGELOG 没写」。
@@ -16,14 +22,16 @@ CHANGELOG.md 不自动生成 —— 变更说明得人写。脚本只检查该�
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 VERSION_PATTERN = re.compile(r"^v\d+\.\d+\.\d+$")
-CURRENT_PATTERN = re.compile(r"v\d+\.\d+\.\d+")
 
 # 需要跟着版本号走的文件，以及各自「版本号该长什么样」的正则
 TARGETS = (
@@ -32,13 +40,71 @@ TARGETS = (
     (Path("shadowrocket/README.md"), re.compile(r"(当前版本：)`v\d+\.\d+\.\d+`"), r"\g<1>`{new}`"),
 )
 
+# 参与「规则内容」指纹的产物。归一化时去掉注释和空行 ——
+# .conf 头部的 `# Source:` 行会随 PC 发版变化，但那不是规则内容变了。
+ARTIFACTS = (
+    ("shadowrocket/Shadowrocket.rules.conf", "conf"),
+    ("karing/karing-diversion-rules.json", "json"),
+)
+
+
+def normalize(text: str, kind: str) -> str:
+    if kind == "conf":
+        return "\n".join(
+            line for line in text.splitlines() if line.strip() and not line.startswith("#")
+        )
+    document = json.loads(text)
+    return json.dumps(document, ensure_ascii=False, sort_keys=True)
+
+
+def fingerprint(read: "callable") -> str | None:
+    """read(relative_path) -> 文本或 None。取不到就返回 None。"""
+    parts = []
+    for relative, kind in ARTIFACTS:
+        text = read(relative)
+        if text is None:
+            return None
+        parts.append(normalize(text, kind))
+    return hashlib.sha256("\0".join(parts).encode("utf-8")).hexdigest()
+
+
+def read_worktree(relative: str) -> str | None:
+    path = REPO_ROOT / relative
+    return path.read_text(encoding="utf-8") if path.is_file() else None
+
+
+def read_git(ref: str, relative: str) -> str | None:
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{relative}"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout if result.returncode == 0 else None
+
+
+def tag_exists(tag: str) -> bool:
+    result = subprocess.run(
+        ["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2 or not VERSION_PATTERN.match(argv[1]):
-        print("用法: python3 scripts/bump-version.py vX.Y.Z", file=sys.stderr)
+    force = "--force" in argv[1:]
+    args = [arg for arg in argv[1:] if arg != "--force"]
+
+    if len(args) != 1 or not VERSION_PATTERN.match(args[0]):
+        print(
+            "用法: python3 scripts/bump-version.py vX.Y.Z [--force]",
+            file=sys.stderr,
+        )
         return 1
 
-    new_version = argv[1]
+    new_version = args[0]
     version_file = REPO_ROOT / "VERSION.txt"
     old_version = version_file.read_text(encoding="utf-8").strip()
 
@@ -48,14 +114,29 @@ def main(argv: list[str]) -> int:
 
     # CHANGELOG 必须先有人写好条目，否则不允许改版本号
     changelog_path = REPO_ROOT / "CHANGELOG.md"
-    changelog = changelog_path.read_text(encoding="utf-8")
-    if f"## {new_version}" not in changelog:
+    if f"## {new_version}" not in changelog_path.read_text(encoding="utf-8"):
         print(
             f"错误: CHANGELOG.md 里还没有 `## {new_version}` 条目。\n"
             "先写好该版本的变更说明，再跑这个脚本。",
             file=sys.stderr,
         )
         return 1
+
+    # 规则内容没变就不该发新版
+    if not force:
+        if not tag_exists(old_version):
+            print(f"提示: {old_version} 还没有 tag，跳过规则内容比对。")
+        else:
+            before = fingerprint(lambda rel: read_git(old_version, rel))
+            after = fingerprint(read_worktree)
+            if before is not None and before == after:
+                print(
+                    f"错误: 规则内容与 {old_version} 完全相同，不该发新版本。\n"
+                    "版本号只表示规则（域名/分组/顺序）的版本，测试、CI、脚本、文档之类的\n"
+                    "工程改动走普通提交即可。确实需要发就用 --force。",
+                    file=sys.stderr,
+                )
+                return 1
 
     changed = []
     version_file.write_text(new_version + "\n", encoding="utf-8")

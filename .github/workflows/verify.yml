@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 版本号护栏要读历史 tag 比对规则内容，浅克隆拿不到 tag
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
