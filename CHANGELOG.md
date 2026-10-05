@@ -6,17 +6,38 @@
 测试、CI、脚本、文档这类工程改动走普通 commit，不占版本号。`scripts/bump-version.py`
 会在规则内容没变时拒绝改版本号。
 
-> **历史说明**：v0.3.2 ~ v0.3.5 这四版的规则内容与 v0.3.1 **完全相同**，
-> 属于「工程版本」（换规则源、加来源标注、加测试与 CI、加发版工具）。
-> 当时没有「只在规则变化时发版」这条规矩，所以版本号涨了四次而手机端拿到的规则没变。
-> 这些版本保留在历史里，不再追认。
+> **历史说明**：v0.3.2 ~ v0.3.5 这四个版本号的规则内容与 v0.3.1 **完全相同** ——
+> 它们的改动全是工程性质（换规则源、加来源标注、加测试与 CI、加发版工具），
+> 手机端拿到的规则一个字都没变。当时没有「只在规则变化时发版」这条规矩。
+> **这四个版本号已撤销**（tag 与 Release 均已删除），改动本身完整保留在下面的
+> 「未计入版本的工程变更」里。当前版本号回到 **v0.3.1**，也就是最后一个真正改过规则的版本。
 
 手机端和 PC 版（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit)）
 是**两套独立的版本号**。每版对应的 PC 源版本记在下面，Shadowrocket 的 `.conf` 头部也会写一行
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
-## v0.3.5
+## v0.3.1
+
+
+- **补齐 Karing 与 Shadowrocket 的同构性**。两份产物此前分组不一致：
+  - Karing 新增 `💱 交易所`（26 条），此前只有小火箭能分流交易所。
+  - Karing 把 `🚀 代理` 里混着的地区锁定域名拆成 `🇺🇸 美国` 和 `🇸🇬 新加坡` 两个独立组，PC 版本来就是分开的。
+  - 两份产物现在都是 10 个分组，分组名与顺序一一对应，Karing 比 Shadowrocket 多出的域名条目为 **0**。
+- **修正 Karing 的规则顺序**：`🎬 YouTube` 移到 `🌐 Google` 之前。此前 `youtubei.googleapis.com` 会被 `googleapis.com` 抢走，永远进不了 YouTube 组。
+- 两份产物的组顺序统一为「精确规则 → 国内直连 → 代理」。精确规则必须前置，否则 `tgalileo.com` 这类「在 cn 域名库里但要走代理」的域名会被判成直连，和 PC 的意图相反。
+- 新增 `scripts/check-drift.sh`：把产物重新生成到临时目录再和仓库里的逐字节对比，不一致就报错并打印 diff，`--fix` 直接重新生成。
+- `build-release.command` 打包前强制跑漂移检测，产物落后于 PC 配置就不出包。
+- 手机端独有分组（交易所）的定义挪到 `scripts/extra-rules.json`，两个生成脚本共用一份，不再各写各的。
+- 两个生成脚本支持 `--out-dir`；新增「一个 PC 策略被两个分组声明」的报错，避免先声明的组静默吞掉规则。
+
+## 未计入版本的工程变更
+
+下面这些改动发生在 v0.3.1 之后，但**没有改变任何规则内容**（域名、分组、顺序都没动），
+按「版本号只表示规则内容」的约定不该占版本号。原先误发成了 v0.3.2 ~ v0.3.5，
+现已撤销这四个版本号，改动本身完整保留在这里。
+
+### 发版工具（原 v0.3.5）
 
 - 新增 `scripts/bump-version.py`：一处命令改齐所有位置的项目版本号。此前版本号散在
   `VERSION.txt` / `README.md` / `karing/README.md` / `shadowrocket/README.md` 四处，
@@ -36,7 +57,7 @@
 - `check-sensitive.sh` 的扫描范围补上 `tests/` 和 `.github/`。
 - **对应 PC 源：`v0.3.34`**（规则内容与前几版相同，本次只改工程流程）
 
-## v0.3.4
+### 产物约束测试与 CI（原 v0.3.4）
 
 - 新增 `tests/test_products.py`：17 条产物约束检查，离线运行。此前几个关键约束只写在注释里，
   改错了没人拦 —— 现在钉死了：组顺序、`YouTube` 必须先于 `Google`、精确分组必须先于国内直连 / 代理、
@@ -51,7 +72,7 @@
 - README 重写「怎么保证不出错」章节，按「产物落后」和「产物被改错」两类风险分别说明防线。
 - **对应 PC 源：`v0.3.34`**（规则内容与 v0.3.3 相同，仅新增检查）
 
-## v0.3.3
+### 来源标注（原 v0.3.3）
 
 - Shadowrocket 三份 `.conf` 的头部新增 `# Source: reroc8/clash-verge-share-kit v0.3.34`，
   标明该产物由 PC 的哪一版生成。此前产物里没有任何信息能追溯它对应 PC 的哪一版 ——
@@ -67,7 +88,7 @@
   | v0.1.0 ~ v0.1.2 | 手工维护，不对应任何 PC 版本 |
   | v0.2.0 起 | `v0.3.34` |
 
-## v0.3.2
+### 规则源与产物对齐（原 v0.3.2）
 
 - **规则源改为 PC 版仓库的 GitHub 源码**，不再读本机 `~/Desktop/Clash配置/.../Merge.yaml`：
   ```text
@@ -79,20 +100,9 @@
 - `check-drift.sh` 支持 `RULES_SOURCE` 环境变量指定规则源，默认走 GitHub。
 - 规则源拉取失败（网络异常、URL 不存在、本地文件缺失）都会给出明确报错，不会静默产出空规则。
 
-## v0.3.1
-
-- **补齐 Karing 与 Shadowrocket 的同构性**。两份产物此前分组不一致：
-  - Karing 新增 `💱 交易所`（26 条），此前只有小火箭能分流交易所。
-  - Karing 把 `🚀 代理` 里混着的地区锁定域名拆成 `🇺🇸 美国` 和 `🇸🇬 新加坡` 两个独立组，PC 版本来就是分开的。
-  - 两份产物现在都是 10 个分组，分组名与顺序一一对应，Karing 比 Shadowrocket 多出的域名条目为 **0**。
-- **修正 Karing 的规则顺序**：`🎬 YouTube` 移到 `🌐 Google` 之前。此前 `youtubei.googleapis.com` 会被 `googleapis.com` 抢走，永远进不了 YouTube 组。
-- 两份产物的组顺序统一为「精确规则 → 国内直连 → 代理」。精确规则必须前置，否则 `tgalileo.com` 这类「在 cn 域名库里但要走代理」的域名会被判成直连，和 PC 的意图相反。
-- 新增 `scripts/check-drift.sh`：把产物重新生成到临时目录再和仓库里的逐字节对比，不一致就报错并打印 diff，`--fix` 直接重新生成。
-- `build-release.command` 打包前强制跑漂移检测，产物落后于 PC 配置就不出包。
-- 手机端独有分组（交易所）的定义挪到 `scripts/extra-rules.json`，两个生成脚本共用一份，不再各写各的。
-- 两个生成脚本支持 `--out-dir`；新增「一个 PC 策略被两个分组声明」的报错，避免先声明的组静默吞掉规则。
 
 ## v0.3.0
+
 
 - **Shadowrocket 规则对齐 PC 版**。此前它停在 v0.1.2 的手工快照上，PC 端后续新增的 93 条域名一条都没跟过来；现在两份产物的规则源统一为 PC 版 `Merge.yaml`，缺口为 0。
   - 补上的包括：国内 AI 全家桶（豆包、通义、混元、智谱、Minimax、阶跃等约 40 条）、Claude 边缘域名（`clau.de`、`claudemcpclient.com`、`anthropic.auth0.com`、`servd-anthropic-website.b-cdn.net` 等）、Gemini 生态（Antigravity、Jules、Opal、NotebookLM、Stitch、`aicode` / `aida` / `aisandbox-pa`）、Telegram 新域名、以及 `lexmount.com` / `muse.meta.com` / `dola.com` / `mail.com` / `tgalileo.com` 等地区特例。
@@ -104,6 +114,7 @@
 
 ## v0.2.0
 
+
 - 新增 `karing/` 产物：Karing 全平台（iOS / Android / Windows / macOS）自定义分流组 JSON，7 组 190 条显式域名规则 + 8 个内置规则集。
 - 新增 `scripts/build-karing-rules.py`：从 PC 版 Clash Verge `Merge.yaml` 生成 Karing JSON，显式规则直接搬运，`RULE-SET` 映射为 Karing 内置规则集，遇到未登记的规则集或策略名直接报错，防止两边漂移。
 - Karing 分流用其原生「自定义分流组」系统：实测 Karing 导入 Clash 配置只取节点、不读 `proxy-groups` / `rules`，Clash 格式带不进分流。
@@ -114,6 +125,7 @@
 
 ## v0.1.2
 
+
 - 拆分 Shadowrocket 使用入口：小白优先用 `Shadowrocket.full.conf` 完整骨架模板，高级用户可用 `Shadowrocket.rules.conf` 纯规则片段。
 - `Shadowrocket.conf` 保留为旧链接兼容文件，内容仍是纯规则片段，不包含节点或订阅。
 - 收窄 AI 规则：移除 Cloudflare、Statsig、Bing、Google 通用支撑域对 `AI` 策略的误绑。
@@ -123,12 +135,14 @@
 
 ## v0.1.1
 
+
 - 增加 GitHub Pages 手机入口页，方便 iPhone 用户打开后复制规则链接或扫码。
 - 增加 Shadowrocket 导入二维码入口。
 - README 补充三步导入说明和 Johnshall 项目的参考边界：只参考入口页/二维码/发布说明，不引入广告拦截。
 - 强化小白文案：本项目核心是 AI 风控稳定，不是去广告或泛用全网代理。
 
 ## v0.1.0
+
 
 - 初版发布 Shadowrocket 小火箭 AI 风控稳定简化规则。
 - Claude 独立命中 `Claude`，建议只放美国节点。
