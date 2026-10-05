@@ -1,0 +1,42 @@
+name: verify
+
+# 两道检查，都不需要任何密钥：
+#   1. 产物约束   —— 组顺序、映射、内置规则集名字等，离线跑
+#   2. 漂移检测   —— 产物是否等于「用 PC 版仓库当前源码生成的结果」
+#
+# 第 2 项是重点：PC 版改了规则不会通知这边，只能靠定时对比。
+# 漂移时这个 workflow 会失败，GitHub 会给仓库所有者发邮件。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # 每天 UTC 01:00（北京时间 09:00）检查一次 PC 版源码有没有新变化
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 产物约束检查
+        run: python3 -m unittest discover -s tests -v
+
+      - name: 敏感信息扫描
+        run: bash scripts/check-sensitive.sh
+
+      - name: 与 PC 版源码比对
+        run: bash scripts/check-drift.sh
+
+      - name: 漂移时的修复提示
+        if: failure()
+        run: |
+          echo "::error::产物与 PC 版源码不一致。本地跑 bash scripts/check-drift.sh --fix 重新生成，"
+          echo "::error::确认 diff 后提交即可。"

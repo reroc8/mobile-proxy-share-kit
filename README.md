@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.3.3`，只维护两份产物。
+面向手机端的代理分流规则包。当前 `v0.3.4`，只维护两份产物。
 
 两份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组结构、组顺序、规则条数都一致，不会各走各的。
 
@@ -104,6 +104,12 @@ scripts/
   check-sensitive.sh
   build-release.command
 
+tests/
+  test_products.py                  产物约束检查（组顺序、映射、内置规则集名字等，离线）
+
+.github/workflows/
+  verify.yml                        自动跑产物约束检查 + 漂移检测
+
 docs/                           GitHub Pages 手机入口页
   index.html
   karing/karing-diversion-rules.json   Pages 同源下载副本，由脚本同步
@@ -150,9 +156,11 @@ python3 scripts/build-karing-rules.py ~/Desktop/Clash配置/clash-verge-share-ki
 - 未登记的规则集、未知策略名、未处理的规则类型、一个策略被两个组声明、空分组，
   都会直接报错退出。
 
-## 怎么保证不再落后于 PC 版
+## 怎么保证不出错
 
-`v0.1.x` 到 `v0.3.0` 之间 Shadowrocket 落后了 93 条，原因是当时它由手工维护、没有接规则源。现在有三道闸：
+这个项目最容易出的两类错，各有一道防线。
+
+**第一类：产物落后于 PC 版。** `v0.1.x` 到 `v0.3.0` 之间 Shadowrocket 落后了 93 条，原因是当时它由手工维护、没有接规则源。现在有三道闸：
 
 1. **脚本生成** —— 产物不再是手写的，改 PC 配置后重新生成即可，不会再出现「改了一边忘了另一边」。
 
@@ -164,12 +172,36 @@ python3 scripts/build-karing-rules.py ~/Desktop/Clash配置/clash-verge-share-ki
    bash scripts/check-drift.sh --fix   # 检测并重新生成
    ```
 
-   因为规则源是 GitHub，这个检查在任何机器上都能跑，也能挂 CI。
+3. **发版卡口** —— `build-release.command` 在打包前强制跑一遍漂移检测和产物约束检查，
+   任何一项不过就不出包。
 
-3. **发版卡口** —— `build-release.command` 在打包前强制跑一次漂移检测，
-   产物和 PC 源码不一致就不出包。
+**第二类：产物本身被改错。** 几个关键约束（组顺序、地区映射、内置规则集名字）以前只写在注释里，
+改错了没人拦。现在钉在 `tests/test_products.py` 里：
 
-PC 版仓库的规则改完后，跑一次 `bash scripts/check-drift.sh --fix`，有差异就提交，即可保持同步。
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+约束包括：
+
+- 两个产物的分组名与顺序完全一致，`YouTube` 在 `Google` 之前（否则 `youtubei.googleapis.com` 被 `googleapis.com` 抢走）
+- 所有精确分组排在国内直连和代理之前（否则 `tgalileo.com` 会被判成直连）
+- Karing 的域名集合是 Shadowrocket 的子集（两份产物同构）
+- `tgalileo.com` 走代理、`mail.com` / `lexmount.com` / `muse.*` 走美国、`dola.com` 走新加坡
+- `rule_set_build_in` 的名字在已验证白名单内（写错不会报错，只会静默不匹配）
+- `domain_suffix` 带前导点、无跨组重复域名
+- `.conf` 头部带 PC 源版本标注
+
+**自动跑。** `.github/workflows/verify.yml` 在每次 push、PR，以及**每天定时**执行上面全部检查。
+PC 版改了规则不会通知这边，定时检查是唯一的自动发现手段；一旦漂移，workflow 失败并给仓库所有者发邮件。
+
+本地改完规则后的完整流程：
+
+```bash
+bash scripts/check-drift.sh --fix             # 按 PC 源码重新生成
+python3 -m unittest discover -s tests -v      # 确认没破坏约束
+git diff                                      # 看差异是否符合预期
+```
 
 ## 参考来源
 

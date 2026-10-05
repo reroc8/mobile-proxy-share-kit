@@ -34,6 +34,12 @@ fi
 
 "$ROOT_DIR/scripts/check-sensitive.sh"
 
+# 产物约束：组顺序、映射、内置规则集名字等。离线跑，不依赖 PC 源码。
+if ! (cd "$ROOT_DIR" && python3 -m unittest discover -s tests); then
+    echo "错误: 产物约束检查未通过，先修好再发版"
+    exit 1
+fi
+
 # karing/ 是产物，docs/karing/ 是 Pages 同源下载副本，两者必须逐字节一致。
 if ! diff -q "$ROOT_DIR/karing/karing-diversion-rules.json" \
              "$ROOT_DIR/docs/karing/karing-diversion-rules.json" >/dev/null; then
@@ -59,7 +65,7 @@ fi
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/karing" "$TMP_DIR/docs/assets" "$TMP_DIR/docs/karing" "$TMP_DIR/scripts"
+mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/karing" "$TMP_DIR/docs/assets" "$TMP_DIR/docs/karing" "$TMP_DIR/scripts" "$TMP_DIR/tests"
 cp "$ROOT_DIR/README.md" "$TMP_DIR/README.md"
 cp "$ROOT_DIR/VERSION.txt" "$TMP_DIR/VERSION.txt"
 cp "$ROOT_DIR/CHANGELOG.md" "$TMP_DIR/CHANGELOG.md"
@@ -72,6 +78,8 @@ cp "$ROOT_DIR/scripts/build-karing-rules.py" "$TMP_DIR/scripts/build-karing-rule
 cp "$ROOT_DIR/scripts/build-shadowrocket-rules.py" "$TMP_DIR/scripts/build-shadowrocket-rules.py"
 cp "$ROOT_DIR/scripts/extra-rules.json" "$TMP_DIR/scripts/extra-rules.json"
 cp "$ROOT_DIR/scripts/check-drift.sh" "$TMP_DIR/scripts/check-drift.sh"
+mkdir -p "$TMP_DIR/tests"
+cp "$ROOT_DIR/tests/"*.py "$TMP_DIR/tests/"
 cp "$ROOT_DIR/docs/index.html" "$TMP_DIR/docs/index.html"
 cp "$ROOT_DIR/docs/assets/shadowrocket-full-qr.png" "$TMP_DIR/docs/assets/shadowrocket-full-qr.png"
 cp "$ROOT_DIR/docs/karing/"*.json "$TMP_DIR/docs/karing/"
