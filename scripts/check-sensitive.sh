@@ -13,6 +13,8 @@ SCAN_PATHS=(
     shadowrocket
     karing
     docs
+    tests
+    .github
 )
 
 if command -v rg >/dev/null 2>&1; then

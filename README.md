@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.3.4`，只维护两份产物。
+面向手机端的代理分流规则包。当前 `v0.3.5`，只维护两份产物。
 
 两份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组结构、组顺序、规则条数都一致，不会各走各的。
 
@@ -102,7 +102,9 @@ scripts/
   extra-rules.json                  PC 没有、手机端补充的分组（两个脚本共用）
   check-drift.sh                    检测产物是否落后于 PC 版源码
   check-sensitive.sh
-  build-release.command
+  bump-version.py                   一处改齐所有位置的版本号
+  build-release.command             出包（跑全部检查后打 zip）
+  publish-release.sh                打 tag + 建 GitHub Release 并上传 zip
 
 tests/
   test_products.py                  产物约束检查（组顺序、映射、内置规则集名字等，离线）
@@ -201,6 +203,30 @@ PC 版改了规则不会通知这边，定时检查是唯一的自动发现手�
 bash scripts/check-drift.sh --fix             # 按 PC 源码重新生成
 python3 -m unittest discover -s tests -v      # 确认没破坏约束
 git diff                                      # 看差异是否符合预期
+```
+
+## 发版流程
+
+```bash
+# 1. 先在 CHANGELOG.md 顶部写好新版本的变更说明（脚本不会替你写）
+# 2. 一处命令改齐所有位置的版本号；CHANGELOG 缺条目会直接报错
+python3 scripts/bump-version.py v0.3.6
+
+# 3. 提交
+git add -A && git commit -m "Ship v0.3.6: ..."
+
+# 4. 出包（内部会跑版本一致性、产物约束、敏感信息扫描、漂移检测，任何一项不过都不出包）
+bash scripts/build-release.command
+
+# 5. 打 tag + 建 GitHub Release 并上传 zip（Release 说明自动从 CHANGELOG 抽取）
+bash scripts/publish-release.sh --dry-run     # 先看看会做什么
+bash scripts/publish-release.sh
+```
+
+发布包不在仓库里（`dist/` 被 gitignore），只通过 GitHub Release 分发：
+
+```text
+https://github.com/reroc8/mobile-proxy-share-kit/releases
 ```
 
 ## 参考来源

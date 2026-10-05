@@ -8,6 +8,26 @@ PC 没有），版本号只表示手机端自己的变更。
 一眼能看出这份规则是从 PC 的哪一版生成的。Karing 的 JSON 是 Karing 私有格式，
 不往里塞自定义字段（避免导入被拒），对应关系看这里的记录。
 
+## v0.3.5
+
+- 新增 `scripts/bump-version.py`：一处命令改齐所有位置的项目版本号。此前版本号散在
+  `VERSION.txt` / `README.md` / `karing/README.md` / `shadowrocket/README.md` 四处，
+  手工改漏过一次（README 说是 v0.2.0、VERSION.txt 已是 v0.3.0）。脚本会在
+  `CHANGELOG.md` 缺少对应版本条目时直接报错，避免「改了版本号没写说明」。
+- 新增 `scripts/publish-release.sh`：出包 → 打 tag → 建 GitHub Release 并把 zip 传上去，
+  Release 说明从 `CHANGELOG.md` 对应段落自动抽取。此前 `dist/` 在 `.gitignore` 里，
+  发布包只留在本机，别人从仓库根本拿不到成品。
+  ```bash
+  bash scripts/publish-release.sh --dry-run   # 只检查
+  bash scripts/publish-release.sh             # 真发
+  ```
+- 补齐 `v0.2.0` ~ `v0.3.4` 的历史 tag。此前只有 `v0.1.0` ~ `v0.1.2` 有 tag，
+  v0.2.0 之后完全没有版本锚点。
+- 产物约束测试从 17 条扩到 21 条，新增版本号一致性检查：`VERSION.txt`、三个 README、
+  `CHANGELOG.md` 最新条目必须完全对齐，且该版本条目下必须有变更说明。
+- `check-sensitive.sh` 的扫描范围补上 `tests/` 和 `.github/`。
+- **对应 PC 源：`v0.3.34`**（规则内容与前几版相同，本次只改工程流程）
+
 ## v0.3.4
 
 - 新增 `tests/test_products.py`：17 条产物约束检查，离线运行。此前几个关键约束只写在注释里，

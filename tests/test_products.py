@@ -268,10 +268,49 @@ class TestSourceStamp(unittest.TestCase):
         }
         self.assertEqual(len(stamps), 1, f"三份 .conf 的来源标注不一致: {stamps}")
 
-    def test_version_file_matches_changelog(self) -> None:
-        version = (REPO_ROOT / "VERSION.txt").read_text(encoding="utf-8").strip()
+
+class TestVersionConsistency(unittest.TestCase):
+    """版本号散在 4 个文件里，手改漏一个就会出现「README 说 v0.3.3、VERSION.txt 说 v0.3.4」
+    这种不一致 —— 已经漏过一次。改用 scripts/bump-version.py 统一改，这里钉住一致性。"""
+
+    README_PATTERNS = {
+        "README.md": r"当前 `(v\d+\.\d+\.\d+)`",
+        "karing/README.md": r"当前版本：`(v\d+\.\d+\.\d+)`",
+        "shadowrocket/README.md": r"当前版本：`(v\d+\.\d+\.\d+)`",
+    }
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.version = (REPO_ROOT / "VERSION.txt").read_text(encoding="utf-8").strip()
+
+    def test_version_format(self) -> None:
+        self.assertRegex(self.version, r"^v\d+\.\d+\.\d+$")
+
+    def test_readmes_match_version_file(self) -> None:
+        for relative, pattern in self.README_PATTERNS.items():
+            text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+            found = re.findall(pattern, text)
+            self.assertTrue(found, f"{relative} 里找不到版本号写法")
+            for value in found:
+                self.assertEqual(value, self.version, f"{relative} 的版本号与 VERSION.txt 不一致")
+
+    def test_changelog_top_entry_is_current(self) -> None:
         changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn(f"## {version}", changelog, f"CHANGELOG.md 里没有 {version} 条目")
+        headings = re.findall(r"^## (v\d+\.\d+\.\d+)$", changelog, re.M)
+        self.assertTrue(headings, "CHANGELOG.md 里没有任何版本条目")
+        self.assertEqual(headings[0], self.version, "CHANGELOG 最新条目不是当前版本")
+
+    def test_changelog_entry_has_content(self) -> None:
+        changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        section = changelog.split(f"## {self.version}", 1)[1].split("\n## ", 1)[0]
+        self.assertTrue(
+            any(line.startswith("- ") for line in section.splitlines()),
+            f"CHANGELOG 的 {self.version} 条目下没有任何变更说明",
+        )
+
+    def test_release_scripts_present(self) -> None:
+        for relative in ("scripts/bump-version.py", "scripts/publish-release.sh"):
+            self.assertTrue((REPO_ROOT / relative).is_file(), f"缺少 {relative}")
 
 
 if __name__ == "__main__":
