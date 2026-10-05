@@ -59,12 +59,25 @@ Karing 没有开放导入分流组的 URL Scheme，做不到点一下直接进 A
 
 ## Shadowrocket 快速使用
 
+一键导入（**只能在 iPhone / iPad 上用 Safari** 打开下面这个页面再点按钮，手机会自动跳进
+Shadowrocket 下载并启用配置）：
+
+```text
+https://reroc8.github.io/mobile-proxy-share-kit/
+```
+
+按钮调用的是 `shadowrocket://config/add/{配置地址}`。电脑上、微信内置浏览器里点了不会有反应，
+那就走手动步骤：
+
 1. 在 Shadowrocket 里先导入自己的订阅。
 2. 导入完整骨架模板：
 
 ```text
 https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf
 ```
+
+进入「配置」→ 右上角 `+` → 粘贴链接 → 下载 → 在远程文件里点它选「使用配置」→
+回首页把「全局路由」改成「配置」。
 
 3. 把自己的节点放进对应策略：
    - `Claude`：只放美国节点。
@@ -81,6 +94,9 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocke
 ```
 
 旧链接 `Shadowrocket.conf` 会继续保留，等同于纯规则片段，用来兼容已经保存过的二维码或书签。
+
+> Karing 那边做不到一键导入 —— 它的官方 URL Scheme 只开放了添加订阅、恢复备份、连接控制三类，
+> 没有导入分流组的入口。Karing 只能下载 JSON 后在 App 内导入。
 
 ## 文件
 

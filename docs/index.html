@@ -248,6 +248,16 @@
         </div>
       </div>
       <p class="url">用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核，规则可以跨平台复用，省一份维护成本。</p>
+
+      <h3>在手机上打开本页</h3>
+      <div class="qr-wrap">
+        <img class="qr" alt="手机入口页二维码" src="assets/entry-qr.png">
+        <div>
+          <p>你正在电脑上看这个页面？用 iPhone / Android 扫左边的码，就能在手机上打开本页，
+           然后点各客户端下面的一键导入或下载按钮。</p>
+          <p>二维码只指向本页，不含任何节点。</p>
+        </div>
+      </div>
     </section>
 
     <section id="karing">
@@ -308,17 +318,27 @@
       <p class="lead">只有 iOS。小白用完整骨架模板，高级用户用纯规则片段。</p>
 
       <div class="actions">
-        <a class="button" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf">打开完整骨架模板</a>
+        <a class="button" href="shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf">一键导入完整骨架模板</a>
         <a class="button secondary" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.rules.conf">高级用户：只打开规则片段</a>
       </div>
+      <p><strong>「一键导入」只能在 iPhone / iPad 上用 Safari 打开本页再点</strong>，手机会弹出「在 Shadowrocket 中打开」，确认后自动下载并启用配置。在电脑上或微信内置浏览器里点它不会有反应 —— 那种情况走下面的手动步骤。</p>
       <p class="url">模板链接：https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf</p>
       <p>规则和 Karing 那份同源，都从 PC 版配置生成，不会两边各走各的。</p>
 
-      <h3>三步使用</h3>
+      <h3>用法</h3>
       <ol>
-        <li>先在 Shadowrocket 导入自己的订阅。</li>
-        <li>导入完整骨架模板，然后断开并重新连接 Shadowrocket。</li>
-        <li>进入策略组，把自己的节点放到 <code>Claude</code>、<code>AI</code>、<code>Exchange</code> 等对应位置。</li>
+        <li>先在 Shadowrocket 里导入你自己的订阅（节点来源）。</li>
+        <li>用上面的「一键导入」按钮导入规则；点了没反应就走下面的手动四步。</li>
+        <li>进入策略组，把节点放到 <code>Claude</code> / <code>AI</code> / <code>Exchange</code> 等对应位置（见下表）。</li>
+        <li>回首页，把「全局路由」改成「配置」。</li>
+      </ol>
+
+      <h3>手动导入（一键失败时用）</h3>
+      <ol>
+        <li>先把上面那个模板链接复制下来。</li>
+        <li>打开 Shadowrocket →「配置」→ 右上角 <code>+</code> → 粘贴链接 → 下载。</li>
+        <li>在「远程文件」里点它 →「使用配置」。</li>
+        <li>回首页，把「全局路由」改成「配置」。</li>
       </ol>
 
       <h3>节点怎么放</h3>
@@ -341,15 +361,6 @@
           <tr><td><code>Proxy</code></td><td>普通代理节点。</td></tr>
         </tbody>
       </table>
-
-      <h3>扫码导入</h3>
-      <div class="qr-wrap">
-        <img class="qr" alt="Shadowrocket 完整骨架模板导入二维码" src="assets/shadowrocket-full-qr.png">
-        <div>
-          <p>用另一台设备打开本页，然后用 iPhone 扫这个二维码。</p>
-          <p>二维码指向完整骨架模板，不包含任何节点。导入后还要使用自己的订阅节点。</p>
-        </div>
-      </div>
     </section>
 
     <section>

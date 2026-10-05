@@ -429,5 +429,20 @@ class TestDocumentLinks(unittest.TestCase):
         self.assertGreater(checked, 0, "一个 Pages 链接都没找到")
 
 
+    def test_shadowrocket_one_tap_link_present(self) -> None:
+        """落地页要保留小火箭的一键导入入口，且指向完整骨架模板。
+
+        Shadowrocket 的 scheme 由社区维护的官方群组关键词文件给出：
+        `shadowrocket://config/add/{url}` = 安装/使用配置。
+        """
+        html = self.read("docs/index.html")
+        match = re.search(r'href="shadowrocket://config/add/([^"]+)"', html)
+        self.assertIsNotNone(match, "落地页里没有小火箭一键导入按钮")
+        self.assertTrue(
+            match.group(1).endswith("shadowrocket/Shadowrocket.full.conf"),
+            f"一键导入应指向完整骨架模板，实际是 {match.group(1)}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

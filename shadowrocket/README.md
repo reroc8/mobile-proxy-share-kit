@@ -15,6 +15,35 @@
 
 PC 靠 `RULE-SET` 表达、Shadowrocket 没有等价写法的部分，在脚本里展开成显式域名（脚本里的 `RULE_SET_EXPANSION`），逐条标注了对应哪个 PC 规则集。
 
+## 一键导入
+
+在 **iPhone / iPad 上用 Safari** 打开手机入口页，点「一键导入完整骨架模板」：
+
+```text
+https://reroc8.github.io/mobile-proxy-share-kit/
+```
+
+按钮实际调用的是 Shadowrocket 的 URL Scheme，点完手机会弹「在 Shadowrocket 中打开」，
+确认后自动下载配置并启用：
+
+```text
+shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf
+```
+
+两个限制：
+
+- **只能用 Safari 点。** 电脑上、或微信/QQ 内置浏览器里点它不会有反应（内置浏览器不处理自定义
+  scheme），要走下面的手动步骤。
+- **方案出自社区维护的官方群组关键词文件**（`lowertop/Shadowrocket` 手册的 URL-Schemes 一节），
+  不是官方开发者文档。如果点了没反应，同样走手动步骤。
+
+## 手动导入（一键失败时用）
+
+1. 复制模板链接（见下面「推荐使用方式」）。
+2. Shadowrocket →「配置」→ 右上角 `+` → 粘贴链接 → 下载。
+3. 在「远程文件」里点它 →「使用配置」。
+4. 回首页，把「全局路由」改成「配置」。
+
 ## 推荐使用方式
 
 小白优先导入完整骨架模板：
