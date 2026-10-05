@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.0
+
+- **Shadowrocket 规则对齐 PC 版**。此前它停在 v0.1.2 的手工快照上，PC 端后续新增的 93 条域名一条都没跟过来；现在两份产物的规则源统一为 PC 版 `Merge.yaml`，缺口为 0。
+  - 补上的包括：国内 AI 全家桶（豆包、通义、混元、智谱、Minimax、阶跃等约 40 条）、Claude 边缘域名（`clau.de`、`claudemcpclient.com`、`anthropic.auth0.com`、`servd-anthropic-website.b-cdn.net` 等）、Gemini 生态（Antigravity、Jules、Opal、NotebookLM、Stitch、`aicode` / `aida` / `aisandbox-pa`）、Telegram 新域名、以及 `lexmount.com` / `muse.meta.com` / `dola.com` / `mail.com` / `tgalileo.com` 等地区特例。
+- 新增 `scripts/build-shadowrocket-rules.py`：`Merge.yaml` → Shadowrocket 三份 `.conf`。PC 的 `RULE-SET` 展开成显式域名（`RULE_SET_EXPANSION`），并在 `RULE_SET_COVERAGE` 里逐条说明覆盖方式；出现未登记的规则集、未知策略名、未处理的规则类型或空策略组都会报错退出。
+- **修正 Shadowrocket 的规则顺序缺陷**：`YouTube` 现在排在 `Google` 前面，避免 `youtubei.googleapis.com` 被 `googleapis.com` 抢走。PC 版本来就是这个顺序。
+- 新增 `US` / `SG` 两个策略组，承接 PC 里按地区写死的规则；之前这些域名在 Shadowrocket 侧完全没有。
+- 因对齐 PC 而移除了几条 PC 判定为误绑的规则：`ai.com`、`gateway.bingviz.*`、`services.bingapis.com`、`api.microsoftapp.net`、`edgeservices.bing.com`、`bing-shopping.microsoft-falcon.io`、`client-api.arkoselabs.com`。交易所分组是 Shadowrocket 独有业务，保留。
+- `build-release.command` 增加 `Shadowrocket.conf` 与 `Shadowrocket.rules.conf` 的一致性校验。
+
 ## v0.2.0
 
 - 新增 `karing/` 产物：Karing 全平台（iOS / Android / Windows / macOS）自定义分流组 JSON，7 组 190 条显式域名规则 + 8 个内置规则集。

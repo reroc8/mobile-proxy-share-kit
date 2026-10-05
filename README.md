@@ -1,6 +1,8 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.2.0`，只维护两份产物。
+面向手机端的代理分流规则包。当前 `v0.3.0`，只维护两份产物。
+
+两份产物的规则内容都从 PC 版 Clash Verge 的 `Merge.yaml` 生成，不会各走各的。
 
 这个项目只提供规则和说明，**不包含任何订阅、节点、账号、密码或 token**。使用者必须先在客户端里导入自己的订阅。
 
@@ -68,6 +70,7 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocke
    - `Claude`：只放美国节点。
    - `AI`：美国节点优先，台湾节点备用。
    - `Exchange`：台湾、新加坡节点。
+   - `US` / `SG`：地区锁定站点，分别只放美国 / 新加坡节点。
    - `Google / YouTube / Telegram / Proxy`：放你常用稳定节点。
 4. 测试 Claude、ChatGPT/Gemini、Google、YouTube、交易所、国内网站。
 
@@ -87,13 +90,14 @@ karing/
   README.md
 
 shadowrocket/
-  Shadowrocket.conf             旧链接兼容，等同纯规则片段
-  Shadowrocket.full.conf        完整骨架模板
+  Shadowrocket.conf             旧链接兼容，内容同 rules.conf
+  Shadowrocket.full.conf        完整骨架模板（多一段 [Proxy Group]）
   Shadowrocket.rules.conf       纯规则片段
   README.md
 
 scripts/
-  build-karing-rules.py         Merge.yaml -> Karing JSON
+  build-karing-rules.py             Merge.yaml -> Karing JSON
+  build-shadowrocket-rules.py       Merge.yaml -> Shadowrocket .conf
   check-sensitive.sh
   build-release.command
 
@@ -104,16 +108,23 @@ docs/                           GitHub Pages 手机入口页
 
 ## 规则来源与生成
 
-Karing 那份 JSON 由脚本从 PC 版 Clash Verge 的 `Merge.yaml` 生成，不手工维护：
+两份产物都是脚本产物，**不手工维护**，规则源统一是 PC 版 Clash Verge 的 `Merge.yaml`：
 
 ```bash
-python3 scripts/build-karing-rules.py [Merge.yaml 路径]
+python3 scripts/build-karing-rules.py      [Merge.yaml 路径]   # Karing
+python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径]   # Shadowrocket
 ```
 
-- 显式 `DOMAIN-SUFFIX` / `DOMAIN` 直接搬运（`domain_suffix` 的值补前导点）。
-- PC 端靠 `RULE-SET` 表达的宽泛覆盖，映射为 Karing 内置规则集（`geosite:*` / `geoip:*` / `acl:*`）。
+- 显式 `DOMAIN-SUFFIX` / `DOMAIN` / `DOMAIN-KEYWORD` 直接搬运。
+- PC 端靠 `RULE-SET` 表达的宽泛覆盖，两个脚本各自换算：
+  Karing 用内置规则集（`geosite:*` / `geoip:*` / `acl:*`），
+  Shadowrocket 展开成显式域名（脚本里的 `RULE_SET_EXPANSION`）。
 - `PROCESS-NAME`、`IP-CIDR`、`MATCH` 这类搬不过去的，在脚本里显式跳过，不静默丢弃。
-- 出现未登记的规则集或策略名会直接报错退出，防止两边配置悄悄漂移。
+- 未登记的规则集、未知策略名、未处理的规则类型、空策略组，都会直接报错退出，
+  防止 PC 端改了而这两份产物悄悄落后。
+
+`Shadowrocket` 有三份 `.conf`，`rules.conf` 与 `Shadowrocket.conf` 内容必须逐字节一致，
+`build-release.command` 会校验；Karing 的 `karing/` 与 `docs/karing/` 同理。
 
 ## 参考来源
 

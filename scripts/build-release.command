@@ -41,6 +41,13 @@ if ! diff -q "$ROOT_DIR/karing/karing-diversion-rules.json" \
     exit 1
 fi
 
+# Shadowrocket.conf 是旧链接兼容文件，必须和 rules.conf 完全一致。
+if ! diff -q "$ROOT_DIR/shadowrocket/Shadowrocket.conf" \
+             "$ROOT_DIR/shadowrocket/Shadowrocket.rules.conf" >/dev/null; then
+    echo "错误: Shadowrocket.conf 与 Shadowrocket.rules.conf 不一致，请先运行 scripts/build-shadowrocket-rules.py"
+    exit 1
+fi
+
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -53,6 +60,7 @@ cp "$ROOT_DIR/shadowrocket/"*.conf "$TMP_DIR/shadowrocket/"
 cp "$ROOT_DIR/karing/README.md" "$TMP_DIR/karing/README.md"
 cp "$ROOT_DIR/karing/"*.json "$TMP_DIR/karing/"
 cp "$ROOT_DIR/scripts/build-karing-rules.py" "$TMP_DIR/scripts/build-karing-rules.py"
+cp "$ROOT_DIR/scripts/build-shadowrocket-rules.py" "$TMP_DIR/scripts/build-shadowrocket-rules.py"
 cp "$ROOT_DIR/docs/index.html" "$TMP_DIR/docs/index.html"
 cp "$ROOT_DIR/docs/assets/shadowrocket-full-qr.png" "$TMP_DIR/docs/assets/shadowrocket-full-qr.png"
 cp "$ROOT_DIR/docs/karing/"*.json "$TMP_DIR/docs/karing/"
