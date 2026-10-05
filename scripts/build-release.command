@@ -34,17 +34,28 @@ fi
 
 "$ROOT_DIR/scripts/check-sensitive.sh"
 
+# karing/ 是产物，docs/karing/ 是 Pages 同源下载副本，两者必须逐字节一致。
+if ! diff -q "$ROOT_DIR/karing/karing-diversion-rules.json" \
+             "$ROOT_DIR/docs/karing/karing-diversion-rules.json" >/dev/null; then
+    echo "错误: docs/karing/ 副本与 karing/ 产物不一致，请先运行 scripts/build-karing-rules.py"
+    exit 1
+fi
+
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/docs/assets"
+mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/karing" "$TMP_DIR/docs/assets" "$TMP_DIR/docs/karing" "$TMP_DIR/scripts"
 cp "$ROOT_DIR/README.md" "$TMP_DIR/README.md"
 cp "$ROOT_DIR/VERSION.txt" "$TMP_DIR/VERSION.txt"
 cp "$ROOT_DIR/CHANGELOG.md" "$TMP_DIR/CHANGELOG.md"
 cp "$ROOT_DIR/shadowrocket/README.md" "$TMP_DIR/shadowrocket/README.md"
 cp "$ROOT_DIR/shadowrocket/"*.conf "$TMP_DIR/shadowrocket/"
+cp "$ROOT_DIR/karing/README.md" "$TMP_DIR/karing/README.md"
+cp "$ROOT_DIR/karing/"*.json "$TMP_DIR/karing/"
+cp "$ROOT_DIR/scripts/build-karing-rules.py" "$TMP_DIR/scripts/build-karing-rules.py"
 cp "$ROOT_DIR/docs/index.html" "$TMP_DIR/docs/index.html"
 cp "$ROOT_DIR/docs/assets/shadowrocket-full-qr.png" "$TMP_DIR/docs/assets/shadowrocket-full-qr.png"
+cp "$ROOT_DIR/docs/karing/"*.json "$TMP_DIR/docs/karing/"
 
 ZIP_NAME="mobile-proxy-share-kit-${VERSION}.zip"
 rm -f "$DIST_DIR/$ZIP_NAME"

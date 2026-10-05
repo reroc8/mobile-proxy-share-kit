@@ -1,0 +1,281 @@
+{
+  "rules": [
+    {
+      "outbound": "currentSelected",
+      "name": "🤖 Claude",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".clau.de",
+        ".claude.ai",
+        ".claude.com",
+        ".claudemcpclient.com",
+        ".claudemcpcontent.com",
+        ".claudeusercontent.com",
+        ".anthropic.com"
+      ],
+      "domain": [
+        "anthropic.auth0.com",
+        "anthropic-com.ghost.io",
+        "anthropic.com.cdn.cloudflare.net",
+        "servd-anthropic-website.b-cdn.net"
+      ],
+      "rule_set_build_in": [
+        "acl:Claude"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
+      "name": "🧠 国际 AI",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".chatgpt.com",
+        ".openai.com",
+        ".oaistatic.com",
+        ".oaiusercontent.com",
+        ".oaistatsig.com",
+        ".openaimerge.com",
+        ".openaiapi-site.azureedge.net",
+        ".chat.com",
+        ".chatgpt.livekit.cloud",
+        ".openaicom.imgix.net",
+        ".openai.com.cdn.cloudflare.net",
+        ".gemini.google.com",
+        ".bard.google.com",
+        ".generativelanguage.googleapis.com",
+        ".ai.google.dev",
+        ".aistudio.google.com",
+        ".makersuite.google.com",
+        ".notebooklm.google.com",
+        ".labs.google",
+        ".deepmind.com",
+        ".aicode.googleapis.com",
+        ".aida.googleapis.com",
+        ".aisandbox-pa.googleapis.com",
+        ".antigravity-unleash.goog",
+        ".antigravity.google",
+        ".deepmind.google",
+        ".gemini.google",
+        ".gemini.gstatic.com",
+        ".generativeai.google",
+        ".geller-pa.googleapis.com",
+        ".jules.google",
+        ".jules.google.com",
+        ".labs.google.com",
+        ".notebooklm.google",
+        ".opal.google",
+        ".opal.google.com",
+        ".proactivebackend-pa.googleapis.com",
+        ".robinfrontend-pa.googleapis.com",
+        ".stitch.withgoogle.com",
+        ".perplexity.ai",
+        ".pplx.ai",
+        ".poe.com",
+        ".x.ai",
+        ".grok.com",
+        ".cursor.com",
+        ".cursor.sh",
+        ".cursorapi.com",
+        ".windsurf.com",
+        ".codeium.com",
+        ".copilot.microsoft.com",
+        ".copilot.cloud.microsoft",
+        ".sydney.bing.com",
+        ".githubcopilot.com",
+        ".copilot-proxy.githubusercontent.com",
+        ".huggingface.co",
+        ".hf.co",
+        ".character.ai",
+        ".replicate.com",
+        ".replicate.delivery",
+        ".midjourney.com",
+        ".runwayml.com",
+        ".stability.ai",
+        ".clipdrop.co",
+        ".ideogram.ai",
+        ".leonardo.ai",
+        ".mistral.ai",
+        ".groq.com",
+        ".cohere.ai",
+        ".cohere.com",
+        ".meta.ai",
+        ".elevenlabs.io",
+        ".elevenlabs.com",
+        ".suno.ai",
+        ".suno.com",
+        ".v0.dev",
+        ".sdk.vercel.ai",
+        ".together.ai",
+        ".together.xyz"
+      ],
+      "domain": [
+        "openai-api.arkoselabs.com",
+        "openaiassets.blob.core.windows.net",
+        "openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net",
+        "openaicomproductionae4b.blob.core.windows.net",
+        "production-openaicom-storage.azureedge.net",
+        "alkalicore-pa.clients6.google.com",
+        "alkalimakersuite-pa.clients6.google.com",
+        "antigravity-pa.googleapis.com",
+        "antigravity.googleapis.com",
+        "cloudaicompanion.googleapis.com",
+        "cloudcode-pa.googleapis.com",
+        "daily-cloudcode-pa.googleapis.com",
+        "notebooklm-pa.googleapis.com",
+        "notebooklm.googleapis.com",
+        "webchannel-alkalimakersuite-pa.clients6.google.com"
+      ],
+      "rule_set_build_in": [
+        "geosite:openai",
+        "geoip:openai",
+        "acl:Gemini"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
+      "name": "🌐 Google",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".oauth2.googleapis.com",
+        ".oauth2.googleusercontent.com"
+      ],
+      "domain": [
+        "accounts.google.com",
+        "myaccount.google.com",
+        "passwords.google.com",
+        "families.google.com",
+        "takeout.google.com",
+        "payments.google.com",
+        "pay.google.com",
+        "wallet.google.com"
+      ],
+      "rule_set_build_in": [
+        "geosite:google"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
+      "name": "🎬 YouTube",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".youtube.com",
+        ".youtu.be",
+        ".youtube-nocookie.com",
+        ".youtubeeducation.com",
+        ".youtubegaming.com",
+        ".youtubekids.com",
+        ".googlevideo.com",
+        ".ytimg.com",
+        ".youtubei.googleapis.com",
+        ".yt3.ggpht.com"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
+      "name": "✈️ Telegram",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".cdn-telegram.org",
+        ".legra.ph",
+        ".t.me",
+        ".tdesktop.com",
+        ".telegra.ph",
+        ".telegram-cdn.org",
+        ".telegram.dog",
+        ".telegram.me",
+        ".telegram.org",
+        ".telegram.space",
+        ".telegramdownload.com",
+        ".telesco.pe"
+      ],
+      "rule_set_build_in": [
+        "geoip:telegram"
+      ]
+    },
+    {
+      "outbound": "direct",
+      "name": "🏠 国内直连",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".deepseek.com",
+        ".kimi.ai",
+        ".moonshot.cn",
+        ".doubao.com",
+        ".volcengine.com",
+        ".volces.com",
+        ".qwen.ai",
+        ".tongyi.aliyun.com",
+        ".dashscope.aliyuncs.com",
+        ".modelscope.cn",
+        ".yiyan.baidu.com",
+        ".wenxin.baidu.com",
+        ".aistudio.baidu.com",
+        ".baidubce.com",
+        ".yuanbao.tencent.com",
+        ".hunyuan.tencent.com",
+        ".hunyuan.cloud.tencent.com",
+        ".tencentcloudapi.com",
+        ".chatglm.cn",
+        ".zhipuai.cn",
+        ".bigmodel.cn",
+        ".minimax.chat",
+        ".minimax.io",
+        ".hailuoai.com",
+        ".xfyun.cn",
+        ".sparkdesk.cn",
+        ".360.com",
+        ".360.cn",
+        ".baichuan-ai.com",
+        ".baichuan-ai.cn",
+        ".01.ai",
+        ".lingyiwanwu.com",
+        ".stepfun.com",
+        ".stepchat.cn",
+        ".sensenova.cn",
+        ".sensecore.cn",
+        ".sensetime.com",
+        ".metaso.cn",
+        ".metaso.com",
+        ".dingtalk.com",
+        ".dingtalkcdn.com",
+        ".lwurl.to"
+      ],
+      "domain": [
+        "codebuddy.cn",
+        "copilot.tencent.com"
+      ],
+      "rule_set_build_in": [
+        "acl:ChinaDomain",
+        "acl:ChinaIp"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
+      "name": "🚀 代理",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".tgalileo.com",
+        ".lexmount.com",
+        ".muse.meta.com",
+        ".muse.ai",
+        ".dola.com",
+        ".developer.apple.com",
+        ".mail.com"
+      ],
+      "domain": [
+        "gateway.icloud.com",
+        "gs.apple.com",
+        "setup.icloud.com"
+      ],
+      "rule_set_build_in": [
+        "geosite:geolocation-!cn"
+      ]
+    }
+  ]
+}

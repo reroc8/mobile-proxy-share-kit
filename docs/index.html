@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Shadowrocket AI 风控稳定规则</title>
-  <meta name="description" content="Shadowrocket 小火箭 AI 风控稳定简化规则：Claude 独立美区，ChatGPT/Gemini 等 AI 独立分流。">
+  <title>手机代理分流规则包 · AI 风控稳定</title>
+  <meta name="description" content="手机端 AI 风控稳定分流规则：Karing 全平台自定义分流组，Shadowrocket 小火箭规则。Claude 独立美区，ChatGPT/Gemini 等 AI 独立分流。">
   <style>
     :root {
       color-scheme: light dark;
@@ -14,6 +14,7 @@
       --muted: #5f6b7a;
       --line: #d8dee8;
       --accent: #1264d8;
+      --on-accent: #ffffff;
       --accent-soft: #e7f0ff;
       --warn: #8a4b00;
       --warn-bg: #fff4de;
@@ -27,6 +28,7 @@
         --muted: #a9b2c0;
         --line: #2b3340;
         --accent: #7db1ff;
+        --on-accent: #0b1220;
         --accent-soft: #17263d;
         --warn: #ffd38a;
         --warn-bg: #2d2414;
@@ -72,6 +74,12 @@
       letter-spacing: 0;
     }
 
+    h3 {
+      font-size: 16px;
+      margin: 16px 0 8px;
+      letter-spacing: 0;
+    }
+
     p {
       margin: 8px 0;
     }
@@ -109,8 +117,9 @@
       display: block;
       text-align: center;
       text-decoration: none;
-      color: #ffffff;
+      color: var(--on-accent);
       background: var(--accent);
+      border: 1px solid var(--accent);
       border-radius: 8px;
       padding: 12px 14px;
       font-weight: 700;
@@ -169,9 +178,49 @@
       font-weight: 700;
     }
 
+    .pick {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: var(--panel);
+    }
+
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0 0 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 2px 9px;
+      margin-left: 6px;
+      vertical-align: 2px;
+    }
+
     @media (min-width: 640px) {
       .qr-wrap {
         grid-template-columns: 240px 1fr;
+      }
+
+      .pick {
+        grid-template-columns: 1fr 1fr;
       }
     }
   </style>
@@ -179,33 +228,95 @@
 <body>
   <main>
     <section>
-      <h1>Shadowrocket AI 风控稳定规则</h1>
-      <p class="lead">核心目标只有一个：让 Claude、ChatGPT、Gemini 等 AI 服务走清晰、稳定的策略组，不和普通 Google / YouTube / Proxy 混在一起。</p>
+      <h1>手机代理分流规则包</h1>
+      <p class="lead">核心目标只有一个：让 Claude、ChatGPT、Gemini 等 AI 服务走清晰、稳定的策略组，不和普通 Google / YouTube / 代理混在一起。</p>
+      <p><strong>先看这一句：</strong>这不是节点订阅，不含任何节点。你必须先在自己的客户端里导入订阅，再用这里的规则。</p>
+      <div class="pick">
+        <div class="card">
+          <h3>Karing<span class="badge">推荐</span></h3>
+          <p>iOS / Android / Windows / macOS 同一套 App，sing-box 内核，免费。用它的「自定义分流组」带分流。</p>
+          <div class="actions">
+            <a class="button" href="#karing">看 Karing 用法</a>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Shadowrocket</h3>
+          <p>只有 iOS。已有小火箭、不想换客户端的人继续用它。</p>
+          <div class="actions">
+            <a class="button secondary" href="#shadowrocket">看小火箭用法</a>
+          </div>
+        </div>
+      </div>
+      <p class="url">用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核，规则可以跨平台复用，省一份维护成本。</p>
+    </section>
+
+    <section id="karing">
+      <h2>Karing</h2>
+      <p class="lead">Karing 导入 Clash 配置时只取节点、不读分流规则，所以这里给的是它自己的「自定义分流组」JSON。</p>
+
+      <div class="actions">
+        <a class="button" href="karing/karing-diversion-rules.json" download="karing-diversion-rules.json">下载分流规则 JSON</a>
+        <a class="button secondary" href="https://github.com/reroc8/mobile-proxy-share-kit/tree/main/karing">查看 GitHub 里的 karing 目录</a>
+      </div>
+      <p class="url">下载地址：https://reroc8.github.io/mobile-proxy-share-kit/karing/karing-diversion-rules.json</p>
+
+      <h3>三步导入</h3>
+      <ol>
+        <li>先在 Karing 首页「+」→「导入配置链接」，粘贴你自己的订阅。</li>
+        <li>点上面的按钮下载规则文件，手机浏览器会存进「文件 / 下载」。</li>
+        <li>Karing「分流」→「自定义分流组」→ 右上角 <code>⋮</code> →「导入」→ 选刚下载的 JSON。</li>
+      </ol>
+
+      <h3>导入后必做</h3>
+      <ol>
+        <li>在「分流规则」页打开「自定义分流组」开关，并把它排在 <code>final</code> 之前。</li>
+        <li>把 <code>final</code> 的出站设为<strong>直连</strong>。这是兜底，和 PC 版的 <code>MATCH,DIRECT</code> 一致。</li>
+        <li>首页模式切到「规则」。</li>
+      </ol>
+      <p>Karing 官方没有开放导入分流组的 URL Scheme（只有 <code>karing://install-config</code> 这类），所以做不到点一下就进 App，只能走「下载文件 → App 内导入」。</p>
+
+      <h3>地区隔离：Claude 只走美国</h3>
+      <p>出站不在 JSON 里，因为地区组的名字是你自己起的。建一个只放美国节点的「自定义自动选择」组，然后到「分流规则」页把 <code>🤖 Claude</code> 的出站指过去。想更严格的话，<code>🧠 国际 AI</code> 也指过去。</p>
+
+      <h3>分组</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>分组</th>
+            <th>默认出站</th>
+            <th>放什么</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>🤖 Claude</code></td><td>当前选择</td><td>Claude / Anthropic 全部域名。建议改成美国组。</td></tr>
+          <tr><td><code>🧠 国际 AI</code></td><td>当前选择</td><td>OpenAI、Gemini、Perplexity、Cursor、Copilot 等。建议美国优先。</td></tr>
+          <tr><td><code>🌐 Google</code></td><td>当前选择</td><td>Google 登录、Gmail、OAuth、支付。</td></tr>
+          <tr><td><code>🎬 YouTube</code></td><td>当前选择</td><td>看视频稳定的节点。</td></tr>
+          <tr><td><code>✈️ Telegram</code></td><td>当前选择</td><td>常用稳定节点。</td></tr>
+          <tr><td><code>🏠 国内直连</code></td><td>直连</td><td>国内 AI 服务、钉钉、国内域名 / IP。</td></tr>
+          <tr><td><code>🚀 代理</code></td><td>当前选择</td><td>其余明确要走代理的海外站点。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="shadowrocket">
+      <h2>Shadowrocket 小火箭</h2>
+      <p class="lead">只有 iOS。小白用完整骨架模板，高级用户用纯规则片段。</p>
+
       <div class="actions">
         <a class="button" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf">打开完整骨架模板</a>
         <a class="button secondary" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.rules.conf">高级用户：只打开规则片段</a>
-        <a class="button secondary" href="https://github.com/reroc8/mobile-proxy-share-kit">查看 GitHub 项目</a>
       </div>
       <p class="url">模板链接：https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf</p>
-    </section>
 
-    <section class="warn">
-      <h2>先看这一句</h2>
-      <p>这不是节点订阅，不含任何节点。你必须先在 Shadowrocket 导入自己的订阅，再使用这份模板或规则。</p>
-      <p>这也不是去广告规则。基础版不启用广告拦截，优先减少登录、验证码、支付、AI 风控接口误伤。</p>
-    </section>
-
-    <section>
-      <h2>三步使用</h2>
+      <h3>三步使用</h3>
       <ol>
         <li>先在 Shadowrocket 导入自己的订阅。</li>
-        <li>导入本页面的完整骨架模板，然后断开并重新连接 Shadowrocket。</li>
+        <li>导入完整骨架模板，然后断开并重新连接 Shadowrocket。</li>
         <li>进入策略组，把自己的节点放到 <code>Claude</code>、<code>AI</code>、<code>Exchange</code> 等对应位置。</li>
       </ol>
-    </section>
 
-    <section>
-      <h2>节点怎么放</h2>
+      <h3>节点怎么放</h3>
       <table>
         <thead>
           <tr>
@@ -223,10 +334,8 @@
           <tr><td><code>Proxy</code></td><td>普通代理节点。</td></tr>
         </tbody>
       </table>
-    </section>
 
-    <section>
-      <h2>扫码导入</h2>
+      <h3>扫码导入</h3>
       <div class="qr-wrap">
         <img class="qr" alt="Shadowrocket 完整骨架模板导入二维码" src="assets/shadowrocket-full-qr.png">
         <div>
@@ -247,14 +356,22 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>Claude</td><td><code>claude.ai</code></td><td><code>Claude</code> 只选美国节点。</td></tr>
-          <tr><td>ChatGPT</td><td><code>chatgpt.com</code></td><td><code>AI</code> 先选美国节点。</td></tr>
-          <tr><td>Gemini</td><td><code>gemini.google.com</code></td><td><code>AI</code> 不要混普通 Google 节点。</td></tr>
-          <tr><td>Google</td><td><code>google.com</code> 或 Gmail</td><td><code>Google</code> 换稳定节点。</td></tr>
-          <tr><td>YouTube</td><td><code>youtube.com</code></td><td><code>YouTube</code> 换视频稳定节点。</td></tr>
-          <tr><td>交易所</td><td>OKX / Bybit / Binance</td><td><code>Exchange</code> 只选台湾/新加坡。</td></tr>
+          <tr><td>Claude</td><td><code>claude.ai</code></td><td>Claude 组是不是只走美国节点。</td></tr>
+          <tr><td>ChatGPT</td><td><code>chatgpt.com</code></td><td>AI 组先选美国节点。</td></tr>
+          <tr><td>Gemini</td><td><code>gemini.google.com</code></td><td>AI 组要排在 Google 组前面，别混普通 Google 节点。</td></tr>
+          <tr><td>Google</td><td><code>google.com</code> 或 Gmail</td><td>Google 组换稳定节点。</td></tr>
+          <tr><td>YouTube</td><td><code>youtube.com</code></td><td>YouTube 组换视频稳定节点。</td></tr>
+          <tr><td>国内网站</td><td>百度、淘宝、腾讯系</td><td>Karing 确认 <code>final</code> 是直连、模式是「规则」。</td></tr>
         </tbody>
       </table>
+    </section>
+
+    <section class="warn">
+      <h2>注意</h2>
+      <p>这两份产物都不是节点订阅，不含任何节点、订阅、账号或密码。你必须先在客户端里导入自己的订阅。</p>
+      <p>也不是去广告规则。不启用广告拦截，优先减少登录、验证码、支付、AI 风控接口误伤。</p>
+      <p>规则做的是流量路径整理，不处理平台账号的地区限制。AI 服务、流媒体平台有自己的风控，使用者需要遵守对应平台规则。</p>
+      <p><a href="https://github.com/reroc8/mobile-proxy-share-kit">查看 GitHub 项目</a></p>
     </section>
   </main>
 </body>

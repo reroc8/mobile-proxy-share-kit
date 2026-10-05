@@ -11,6 +11,7 @@ SCAN_PATHS=(
     CHANGELOG.md
     VERSION.txt
     shadowrocket
+    karing
     docs
 )
 
