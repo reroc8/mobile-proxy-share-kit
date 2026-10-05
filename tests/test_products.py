@@ -328,12 +328,12 @@ def load_bump_tool():
 class TestVersionsTrackRuleChanges(unittest.TestCase):
     """每个版本号都必须对应一次真实的规则内容变化。
 
-    v0.3.2 ~ v0.3.5 曾连发四个规则内容零变化的版本（版本号现已撤销），
+    v0.3.2 ~ v0.3.5 曾连发四个规则内容零变化的版本（版本号已撤销），
     从这个边界之后的版本开始强制。所以这条断言现在会通过，但下次谁再发一个
     「只改了脚本和文档」的版本，它就会红。
     """
 
-    GUARD_FROM = "v0.3.1"
+    GUARD_FROM = "v0.2.0"
 
     @classmethod
     def setUpClass(cls) -> None:

@@ -6,30 +6,44 @@
 测试、CI、脚本、文档这类工程改动走普通 commit，不占版本号。`scripts/bump-version.py`
 会在规则内容没变时拒绝改版本号。
 
-> **历史说明**：v0.3.2 ~ v0.3.5 这四个版本号的规则内容与 v0.3.1 **完全相同** ——
-> 它们的改动全是工程性质（换规则源、加来源标注、加测试与 CI、加发版工具），
-> 手机端拿到的规则一个字都没变。当时没有「只在规则变化时发版」这条规矩。
-> **这四个版本号已撤销**（tag 与 Release 均已删除），改动本身完整保留在下面的
-> 「未计入版本的工程变更」里。当前版本号回到 **v0.3.1**，也就是最后一个真正改过规则的版本。
+> **历史说明**：这个项目的版本号一度涨得没有意义，已做两轮纠正：
+>
+> - `v0.3.2` ~ `v0.3.5` 四个版本号的规则内容与前一版**完全相同**（纯工程改动），已**撤销**。
+> - `v0.3.0` 与 `v0.3.1` 是同一批「把两份产物对齐 PC」工作的两半 —— 中间那个状态两份产物还互相矛盾（小火箭对齐了、Karing 没有），不该单独成版，已**合并为 `v0.2.1`**。
+>
+> 改动内容本身全部保留在下面，没有丢。
 
 手机端和 PC 版（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit)）
 是**两套独立的版本号**。每版对应的 PC 源版本记在下面，Shadowrocket 的 `.conf` 头部也会写一行
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
-## v0.3.1
+## v0.2.1
 
+**两份产物对齐 PC 版规则源。** v0.2.0 新增 Karing 产物时，小火箭还停在 7 月的手工快照上，
+两份产物给出的规则互相矛盾。这一版把两者一起对齐到 PC 版 `Merge.yaml`，并统一了分组结构。
+（对齐分两步做完：小火箭先对齐、一小时后 Karing 跟上；中间那个状态两份产物仍不自洽，因而没有单独成版。）
 
-- **补齐 Karing 与 Shadowrocket 的同构性**。两份产物此前分组不一致：
-  - Karing 新增 `💱 交易所`（26 条），此前只有小火箭能分流交易所。
-  - Karing 把 `🚀 代理` 里混着的地区锁定域名拆成 `🇺🇸 美国` 和 `🇸🇬 新加坡` 两个独立组，PC 版本来就是分开的。
-  - 两份产物现在都是 10 个分组，分组名与顺序一一对应，Karing 比 Shadowrocket 多出的域名条目为 **0**。
-- **修正 Karing 的规则顺序**：`🎬 YouTube` 移到 `🌐 Google` 之前。此前 `youtubei.googleapis.com` 会被 `googleapis.com` 抢走，永远进不了 YouTube 组。
+### Shadowrocket
+
+- **Shadowrocket 规则对齐 PC 版**。此前它停在 v0.1.2 的手工快照上，PC 端后续新增的 93 条域名一条都没跟过来；现在两份产物的规则源统一为 PC 版 `Merge.yaml`，缺口为 0。
+  - 补上的包括：国内 AI 全家桶（豆包、通义、混元、智谱、Minimax、阶跃等约 40 条）、Claude 边缘域名（`clau.de`、`claudemcpclient.com`、`anthropic.auth0.com`、`servd-anthropic-website.b-cdn.net` 等）、Gemini 生态（Antigravity、Jules、Opal、NotebookLM、Stitch、`aicode` / `aida` / `aisandbox-pa`）、Telegram 新域名、以及 `lexmount.com` / `muse.meta.com` / `dola.com` / `mail.com` / `tgalileo.com` 等地区特例。
+- 新增 `scripts/build-shadowrocket-rules.py`：`Merge.yaml` → Shadowrocket 三份 `.conf`。PC 的 `RULE-SET` 展开成显式域名（`RULE_SET_EXPANSION`），并在 `RULE_SET_COVERAGE` 里逐条说明覆盖方式；出现未登记的规则集、未知策略名、未处理的规则类型或空策略组都会报错退出。
+- **修正 Shadowrocket 的规则顺序缺陷**：`YouTube` 现在排在 `Google` 前面，避免 `youtubei.googleapis.com` 被 `googleapis.com` 抢走。PC 版本来就是这个顺序。
+- 新增 `US` / `SG` 两个策略组，承接 PC 里按地区写死的规则；之前这些域名在 Shadowrocket 侧完全没有。
+- 因对齐 PC 而移除了几条 PC 判定为误绑的规则：`ai.com`、`gateway.bingviz.*`、`services.bingapis.com`、`api.microsoftapp.net`、`edgeservices.bing.com`、`bing-shopping.microsoft-falcon.io`、`client-api.arkoselabs.com`。交易所分组是 Shadowrocket 独有业务，保留。
+- `build-release.command` 增加 `Shadowrocket.conf` 与 `Shadowrocket.rules.conf` 的一致性校验。
+
+### Karing
+
+- 新增 `💱 交易所` 分组（26 条），此前只有小火箭能分流交易所。
+- 把 `🚀 代理` 里混着的地区锁定域名拆成 `🇺🇸 美国` 和 `🇸🇬 新加坡` 两个独立组，PC 版本来就是分开的。
+- **修正规则顺序**：`🎬 YouTube` 移到 `🌐 Google` 之前，否则 `youtubei.googleapis.com` 会被 `googleapis.com` 抢走。
 - 两份产物的组顺序统一为「精确规则 → 国内直连 → 代理」。精确规则必须前置，否则 `tgalileo.com` 这类「在 cn 域名库里但要走代理」的域名会被判成直连，和 PC 的意图相反。
-- 新增 `scripts/check-drift.sh`：把产物重新生成到临时目录再和仓库里的逐字节对比，不一致就报错并打印 diff，`--fix` 直接重新生成。
-- `build-release.command` 打包前强制跑漂移检测，产物落后于 PC 配置就不出包。
-- 手机端独有分组（交易所）的定义挪到 `scripts/extra-rules.json`，两个生成脚本共用一份，不再各写各的。
-- 两个生成脚本支持 `--out-dir`；新增「一个 PC 策略被两个分组声明」的报错，避免先声明的组静默吞掉规则。
+
+### 结果
+
+- 两份产物现在都是 **10 个分组**，分组名与顺序一一对应，Karing 比 Shadowrocket 多出的域名条目为 **0**。
 
 ## 未计入版本的工程变更
 
@@ -100,17 +114,12 @@
 - `check-drift.sh` 支持 `RULES_SOURCE` 环境变量指定规则源，默认走 GitHub。
 - 规则源拉取失败（网络异常、URL 不存在、本地文件缺失）都会给出明确报错，不会静默产出空规则。
 
+### 产物检查与生成脚本（原 v0.3.1 条目中的工程部分）
 
-## v0.3.0
-
-
-- **Shadowrocket 规则对齐 PC 版**。此前它停在 v0.1.2 的手工快照上，PC 端后续新增的 93 条域名一条都没跟过来；现在两份产物的规则源统一为 PC 版 `Merge.yaml`，缺口为 0。
-  - 补上的包括：国内 AI 全家桶（豆包、通义、混元、智谱、Minimax、阶跃等约 40 条）、Claude 边缘域名（`clau.de`、`claudemcpclient.com`、`anthropic.auth0.com`、`servd-anthropic-website.b-cdn.net` 等）、Gemini 生态（Antigravity、Jules、Opal、NotebookLM、Stitch、`aicode` / `aida` / `aisandbox-pa`）、Telegram 新域名、以及 `lexmount.com` / `muse.meta.com` / `dola.com` / `mail.com` / `tgalileo.com` 等地区特例。
-- 新增 `scripts/build-shadowrocket-rules.py`：`Merge.yaml` → Shadowrocket 三份 `.conf`。PC 的 `RULE-SET` 展开成显式域名（`RULE_SET_EXPANSION`），并在 `RULE_SET_COVERAGE` 里逐条说明覆盖方式；出现未登记的规则集、未知策略名、未处理的规则类型或空策略组都会报错退出。
-- **修正 Shadowrocket 的规则顺序缺陷**：`YouTube` 现在排在 `Google` 前面，避免 `youtubei.googleapis.com` 被 `googleapis.com` 抢走。PC 版本来就是这个顺序。
-- 新增 `US` / `SG` 两个策略组，承接 PC 里按地区写死的规则；之前这些域名在 Shadowrocket 侧完全没有。
-- 因对齐 PC 而移除了几条 PC 判定为误绑的规则：`ai.com`、`gateway.bingviz.*`、`services.bingapis.com`、`api.microsoftapp.net`、`edgeservices.bing.com`、`bing-shopping.microsoft-falcon.io`、`client-api.arkoselabs.com`。交易所分组是 Shadowrocket 独有业务，保留。
-- `build-release.command` 增加 `Shadowrocket.conf` 与 `Shadowrocket.rules.conf` 的一致性校验。
+- 新增 `scripts/check-drift.sh`：把产物重新生成到临时目录再和仓库里的逐字节对比，不一致就报错并打印 diff，`--fix` 直接重新生成。
+- `build-release.command` 打包前强制跑漂移检测，产物落后于 PC 配置就不出包。
+- 手机端独有分组（交易所）的定义挪到 `scripts/extra-rules.json`，两个生成脚本共用一份，不再各写各的。
+- 两个生成脚本支持 `--out-dir`；新增「一个 PC 策略被两个分组声明」的报错，避免先声明的组静默吞掉规则。
 
 ## v0.2.0
 
