@@ -126,8 +126,9 @@ docs/                           GitHub Pages 手机入口页
   `scripts/bump-version.py` 会比对新旧两版的规则内容，完全相同就直接拒绝改版本号
   （确实要发用 `--force`）。
 
-  这条规矩是补上的：在它之前连续发过 v0.3.2 / v0.3.3 / v0.3.4 / v0.3.5 四个
-  **规则内容零变化**的版本，版本号看着在涨，其实手机端拿到的规则一模一样。
+  这条规矩是补上的。在那之前版本号一度涨得没有意义：`v0.3.2` ~ `v0.3.5` 四个版本的
+  规则内容与前一版**完全相同**（纯工程改动），而 `v0.3.0` / `v0.3.1` 是同一批工作的两半，
+  中间那个状态两份产物还互相矛盾。这些版本号都已撤销 / 合并，详见 `CHANGELOG.md`。
 
 手机端版本号和 PC 版**没有对应关系**，两套编号各管各的：
 
@@ -172,7 +173,7 @@ python3 scripts/build-karing-rules.py ~/Desktop/Clash配置/clash-verge-share-ki
 
 这个项目最容易出的两类错，各有一道防线。
 
-**第一类：产物落后于 PC 版。** `v0.1.x` 到 `v0.3.0` 之间 Shadowrocket 落后了 93 条，原因是当时它由手工维护、没有接规则源。现在有三道闸：
+**第一类：产物落后于 PC 版。** `v0.1.x` 到 `v0.2.1` 之间 Shadowrocket 落后了 93 条，原因是当时它由手工维护、没有接规则源。现在有三道闸：
 
 1. **脚本生成** —— 产物不再是手写的，改 PC 配置后重新生成即可，不会再出现「改了一边忘了另一边」。
 
@@ -220,10 +221,10 @@ git diff                                      # 看差异是否符合预期
 ```bash
 # 1. 先在 CHANGELOG.md 顶部写好新版本的变更说明（脚本不会替你写）
 # 2. 一处命令改齐所有位置的版本号；CHANGELOG 缺条目会直接报错
-python3 scripts/bump-version.py v0.3.6
+python3 scripts/bump-version.py vX.Y.Z
 
 # 3. 提交
-git add -A && git commit -m "Ship v0.3.6: ..."
+git add -A && git commit -m "Ship vX.Y.Z: ..."
 
 # 4. 出包（内部会跑版本一致性、产物约束、敏感信息扫描、漂移检测，任何一项不过都不出包）
 bash scripts/build-release.command
@@ -239,9 +240,11 @@ bash scripts/publish-release.sh
 https://github.com/reroc8/mobile-proxy-share-kit/releases
 ```
 
-## 参考来源
+## 思路来源
 
-这不是泛用科学上网规则。参考了两个方向：
+这一节说的是**思路**参考。规则内容本身来自上面那个 PC 版仓库，不是从这里抄的。
+
+这不是泛用科学上网规则，思路参考了两个方向：
 
 - `blackmatrix7/ios_rule_script`：参考其 OpenAI、Claude、Gemini、Copilot 等专项规则覆盖思路。
 - `Johnshall/Shadowrocket-ADBlock-Rules-Forever`：只参考其手机入口、二维码和多规则发布说明方式。

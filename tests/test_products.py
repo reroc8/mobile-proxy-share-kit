@@ -21,6 +21,7 @@ import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+SOURCE_REPO = "reroc8/mobile-proxy-share-kit"
 
 KARING_FILE = REPO_ROOT / "karing" / "karing-diversion-rules.json"
 SHADOWROCKET_FILES = (
@@ -370,6 +371,62 @@ class TestVersionsTrackRuleChanges(unittest.TestCase):
                 f"{newer} 与 {older} 的规则内容完全相同 —— 版本号只该为规则变更而涨，"
                 "工程改动走普通提交即可",
             )
+
+
+class TestDocumentLinks(unittest.TestCase):
+    """文档里的仓库内链接必须指向真实存在的文件。
+
+    这类失效最不容易被发现：改目录结构、改文件名、删兼容文件，文档照旧写着旧路径，
+    读者点开才发现 404。所以把文档当代码一样测。
+    """
+
+    DOCUMENTS = ("README.md", "karing/README.md", "shadowrocket/README.md", "docs/index.html")
+
+    def read(self, relative: str) -> str:
+        return (REPO_ROOT / relative).read_text(encoding="utf-8")
+
+    def test_raw_githubusercontent_links_resolve(self) -> None:
+        prefix = f"raw.githubusercontent.com/{SOURCE_REPO}/main/"
+        pattern = re.compile(re.escape(prefix) + r"([^\s)`\"<>]+)")
+        checked = 0
+        for relative in self.DOCUMENTS:
+            for path in pattern.findall(self.read(relative)):
+                self.assertTrue(
+                    (REPO_ROOT / path).is_file(),
+                    f"{relative} 指向 {path}，但仓库里没有这个文件",
+                )
+                checked += 1
+        self.assertGreater(checked, 0, "一个 raw 链接都没找到，检查是不是正则失效了")
+
+    def test_landing_page_local_links_resolve(self) -> None:
+        html = self.read("docs/index.html")
+        targets = [
+            target
+            for target in re.findall(r'href="([^"#:][^"]*)"', html)
+            + re.findall(r'src="([^"]+)"', html)
+            if "://" not in target  # 外链交给 test_raw_* / test_pages_* 两类覆盖
+        ]
+        self.assertGreater(len(targets), 0, "落地页里一个本地引用都没找到")
+        for target in targets:
+            self.assertTrue(
+                (REPO_ROOT / "docs" / target).is_file(),
+                f"落地页引用 {target}，但 docs/{target} 不存在",
+            )
+
+    def test_pages_links_resolve_under_docs(self) -> None:
+        """GitHub Pages 的源是 docs/，所以站点路径对应 docs/ 下的文件。"""
+        prefix = f"{SOURCE_REPO.split('/')[0]}.github.io/{SOURCE_REPO.split('/')[1]}/"
+        pattern = re.compile(re.escape(prefix) + r"([^\s)`\"<>]*)")
+        checked = 0
+        for relative in self.DOCUMENTS:
+            for path in pattern.findall(self.read(relative)):
+                path = path.rstrip("/")
+                target = REPO_ROOT / "docs" / (path or "index.html")
+                self.assertTrue(
+                    target.is_file(), f"{relative} 指向站点路径 /{path}，但 docs/{path} 不存在"
+                )
+                checked += 1
+        self.assertGreater(checked, 0, "一个 Pages 链接都没找到")
 
 
 if __name__ == "__main__":
