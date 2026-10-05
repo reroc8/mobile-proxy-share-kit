@@ -6,7 +6,7 @@
 ------------------
 Shadowrocket 的规则原来是手工维护的，停在了 v0.1.2 的快照上，PC 端后来新增的
 93 条域名（国内 AI 全家桶、Claude 边缘域名、Antigravity/Jules/Opal、Telegram 新
-域名、地区特例）一条都没跟过来。改成和 Karing 一样从 Merge.yaml 生成，两边不再漂。
+域名、地区特例）一条都没跟过来。改成和 Karing 一样从 PC 版规则源生成，两边不再漂。
 
 转换规则
 --------
@@ -25,23 +25,29 @@ Shadowrocket 的规则原来是手工维护的，停在了 v0.1.2 的快照上�
 
 用法
 ----
-    python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径] [--out-dir 目录]
+    python3 scripts/build-shadowrocket-rules.py [规则源] [--out-dir 目录]
+
+不传规则源时拉取 PC 版仓库的 GitHub 源码（见 mobile_rules.SOURCE_URL）；
+离线或想用本地副本时传路径即可。
 """
 
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-DEFAULT_SOURCE = (
-    Path.home() / "Desktop" / "Clash配置" / "clash-verge-share-kit" / "config" / "Merge.yaml"
+from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
+    DOMAIN_TYPES,
+    REPO_ROOT,
+    BuildError,
+    describe_source,
+    load_extra_rules,
+    parse_args,
+    parse_merge_rules,
 )
-
-EXTRA_RULES_PATH = REPO_ROOT / "scripts" / "extra-rules.json"
 
 # 产物路径相对于「输出根目录」。默认是仓库根，可用 --out-dir 指向别处，
 # 供 scripts/check-drift.sh 生成到临时目录做比对。
@@ -221,47 +227,6 @@ PROXY_GROUP = (
 )
 
 
-class BuildError(Exception):
-    pass
-
-
-def parse_merge_rules(path: Path) -> list[tuple[str, str, str]]:
-    """只解析 Merge.yaml 顶层 rules: 段。和 Karing 脚本同一套逻辑。"""
-    lines = path.read_text(encoding="utf-8").splitlines()
-
-    start = None
-    for index, line in enumerate(lines):
-        if line.rstrip() == "rules:":
-            start = index
-            break
-    if start is None:
-        raise BuildError(f"{path} 里找不到顶层 rules: 段")
-
-    entries: list[tuple[str, str, str]] = []
-    for raw in lines[start + 1 :]:
-        if not raw.strip() or raw.lstrip().startswith("#"):
-            continue
-        if not raw.startswith("  - "):
-            break
-
-        item = re.split(r"\s+#", raw[4:].strip())[0].strip()
-        parts = [part.strip() for part in item.split(",")]
-        if len(parts) < 2:
-            raise BuildError(f"无法解析的规则行: {raw!r}")
-        entries.append((parts[0], parts[1], parts[2] if len(parts) > 2 else ""))
-    return entries
-
-
-def load_extra_rules() -> dict:
-    """读取 PC 没有、手机端自己补充的分组定义。两个生成脚本共用这一份。"""
-    if not EXTRA_RULES_PATH.is_file():
-        raise BuildError(f"缺少 {EXTRA_RULES_PATH.relative_to(REPO_ROOT)}")
-    data = json.loads(EXTRA_RULES_PATH.read_text(encoding="utf-8"))
-    groups = data.get("groups")
-    if not isinstance(groups, dict):
-        raise BuildError(f"{EXTRA_RULES_PATH.name} 里缺少 groups 段")
-    return groups
-
 
 def collect(entries: list[tuple[str, str, str]]) -> dict[str, list[tuple[str, str]]]:
     rules: dict[str, list[tuple[str, str]]] = {}
@@ -349,36 +314,9 @@ def summarize(rules: dict[str, list[tuple[str, str]]]) -> str:
     )
 
 
-def parse_args(argv: list[str]) -> tuple[Path, Path]:
-    """返回 (规则源, 输出根目录)。--out-dir 供漂移检测脚本生成到临时目录。"""
-    source = DEFAULT_SOURCE
-    out_dir = REPO_ROOT
-    rest = list(argv[1:])
-    while rest:
-        arg = rest.pop(0)
-        if arg == "--out-dir":
-            if not rest:
-                raise BuildError("--out-dir 后面要跟目录")
-            out_dir = Path(rest.pop(0)).expanduser()
-        elif arg.startswith("--out-dir="):
-            out_dir = Path(arg.split("=", 1)[1]).expanduser()
-        else:
-            source = Path(arg).expanduser()
-    return source, out_dir
-
-
 def main(argv: list[str]) -> int:
     try:
         source, out_dir = parse_args(argv)
-    except BuildError as error:
-        print(f"错误: {error}", file=sys.stderr)
-        return 1
-
-    if not source.is_file():
-        print(f"错误: 找不到规则源 {source}", file=sys.stderr)
-        return 1
-
-    try:
         rules = collect(parse_merge_rules(source))
         slim = render(rules, include_proxy_group=False)
         full = render(rules, include_proxy_group=True)
@@ -397,7 +335,7 @@ def main(argv: list[str]) -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
 
-    print(f"规则源: {source}")
+    print(f"规则源: {describe_source(source)}")
     print(summarize(rules))
     for path, _ in outputs:
         print(f"已写入: {path}")

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.2
+
+- **规则源改为 PC 版仓库的 GitHub 源码**，不再读本机 `~/Desktop/Clash配置/.../Merge.yaml`：
+  ```text
+  https://raw.githubusercontent.com/reroc8/clash-verge-share-kit/main/config/Merge.yaml
+  ```
+  好处是不依赖任何人的机器状态 —— 谁 clone 下来跑出来的产物都一样，漂移检测也能挂 CI 了。离线时传本地路径即可，行为不变。
+- 新增 `scripts/mobile_rules.py`：把取规则源、解析 `rules:` 段、读补充分组、解析参数这些两个脚本重复的逻辑抽成一份。
+  两份产物必须同构，逻辑各写一遍早晚会改一边忘一边 —— v0.3.0 之前 Shadowrocket 落后 93 条就是这么来的。
+- `check-drift.sh` 支持 `RULES_SOURCE` 环境变量指定规则源，默认走 GitHub。
+- 规则源拉取失败（网络异常、URL 不存在、本地文件缺失）都会给出明确报错，不会静默产出空规则。
+
 ## v0.3.1
 
 - **补齐 Karing 与 Shadowrocket 的同构性**。两份产物此前分组不一致：

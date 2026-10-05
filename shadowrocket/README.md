@@ -1,6 +1,6 @@
 # Shadowrocket 小火箭 AI 风控稳定规则
 
-当前版本：`v0.3.1`
+当前版本：`v0.3.2`
 
 ## 适合谁
 
@@ -11,7 +11,7 @@
 
 ## 规则从哪来
 
-三份 `.conf` 都由 `scripts/build-shadowrocket-rules.py` 从 PC 版 Clash Verge 的 `Merge.yaml` 生成，**不要手改**。和 `karing/` 用的是同一个规则源，两边不会再各走各的。
+三份 `.conf` 都由 `scripts/build-shadowrocket-rules.py` 从 PC 版仓库的 GitHub 源码生成，**不要手改**。和 `karing/` 用的是同一个规则源，两边不会再各走各的。
 
 PC 靠 `RULE-SET` 表达、Shadowrocket 没有等价写法的部分，在脚本里展开成显式域名（脚本里的 `RULE_SET_EXPANSION`），逐条标注了对应哪个 PC 规则集。
 

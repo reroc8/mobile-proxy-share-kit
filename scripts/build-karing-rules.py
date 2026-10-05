@@ -6,7 +6,7 @@
 ------------------
 Karing 导入 Clash 配置时只取节点，不读 proxy-groups / rules，分流必须用它自己的
 「自定义分流组」系统（导出的格式就是本脚本产出的 JSON）。手工维护那份 JSON 会和
-PC 版 Merge.yaml 逐渐漂移，所以以 Merge.yaml 为唯一规则源，脚本负责转换。
+PC 版规则逐渐漂移，所以以 PC 版仓库的 Merge.yaml 为唯一规则源，脚本负责转换。
 
 转换规则
 --------
@@ -19,9 +19,10 @@ PC 版 Merge.yaml 逐渐漂移，所以以 Merge.yaml 为唯一规则源，脚�
 
 用法
 ----
-    python3 scripts/build-karing-rules.py [Merge.yaml 路径] [--out-dir 目录]
+    python3 scripts/build-karing-rules.py [规则源] [--out-dir 目录]
 
-不传路径时读取 DEFAULT_SOURCE。产出两份内容完全一致的 JSON：
+不传规则源时拉取 PC 版仓库的 GitHub 源码（见 mobile_rules.SOURCE_URL）；
+离线或想用本地副本时传路径即可。产出两份内容完全一致的 JSON：
     karing/karing-diversion-rules.json        发布包内的正式产物
     docs/karing/karing-diversion-rules.json   GitHub Pages 同源副本（供手机一键下载）
 """
@@ -29,17 +30,20 @@ PC 版 Merge.yaml 逐渐漂移，所以以 Merge.yaml 为唯一规则源，脚�
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-DEFAULT_SOURCE = (
-    Path.home() / "Desktop" / "Clash配置" / "clash-verge-share-kit" / "config" / "Merge.yaml"
+from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
+    DOMAIN_TYPES,
+    REPO_ROOT,
+    BuildError,
+    describe_source,
+    load_extra_rules,
+    parse_args,
+    parse_merge_rules,
 )
-
-EXTRA_RULES_PATH = REPO_ROOT / "scripts" / "extra-rules.json"
 
 # 产物路径相对于「输出根目录」。默认是仓库根，可用 --out-dir 指向别处，
 # 供 scripts/check-drift.sh 生成到临时目录做比对。
@@ -157,44 +161,6 @@ RULE_SET_MAP = {
 
 # 这些前缀的规则无法迁移到 Karing 分流组，显式跳过而不是静默丢弃。
 SKIP_PREFIXES = ("PROCESS-NAME", "PROCESS-PATH", "IP-CIDR", "IP-CIDR6", "MATCH", "GEOIP", "SRC-IP-CIDR")
-
-DOMAIN_TYPES = ("DOMAIN-SUFFIX", "DOMAIN", "DOMAIN-KEYWORD")
-
-
-class BuildError(Exception):
-    pass
-
-
-def parse_merge_rules(path: Path) -> list[tuple[str, str, str]]:
-    """只解析 Merge.yaml 顶层 rules: 段，返回 (类型, 值, 目标) 列表。
-
-    刻意不引 PyYAML：这份文件里我们只用得到 rules 段的扁平结构，手写解析
-    少一个依赖，也不会因为文件别处改动而失败。
-    """
-    lines = path.read_text(encoding="utf-8").splitlines()
-
-    start = None
-    for index, line in enumerate(lines):
-        if line.rstrip() == "rules:":
-            start = index
-            break
-    if start is None:
-        raise BuildError(f"{path} 里找不到顶层 rules: 段")
-
-    entries: list[tuple[str, str, str]] = []
-    for raw in lines[start + 1 :]:
-        if not raw.strip() or raw.lstrip().startswith("#"):
-            continue
-        if not raw.startswith("  - "):
-            break  # 遇到下一个顶层键，rules 段结束
-
-        item = re.split(r"\s+#", raw[4:].strip())[0].strip()
-        parts = [part.strip() for part in item.split(",")]
-        if len(parts) < 2:
-            raise BuildError(f"无法解析的规则行: {raw!r}")
-        entries.append((parts[0], parts[1], parts[2] if len(parts) > 2 else ""))
-    return entries
-
 
 def build_document(entries: list[tuple[str, str, str]]) -> dict:
     by_group: dict[str, dict[str, list[str]]] = {
@@ -315,17 +281,6 @@ def build_document(entries: list[tuple[str, str, str]]) -> dict:
     return {"rules": rules}, substituted, supplementary
 
 
-def load_extra_rules() -> dict:
-    """读取 PC 没有、手机端自己补充的分组定义。两个生成脚本共用这一份。"""
-    if not EXTRA_RULES_PATH.is_file():
-        raise BuildError(f"缺少 {EXTRA_RULES_PATH.relative_to(REPO_ROOT)}")
-    data = json.loads(EXTRA_RULES_PATH.read_text(encoding="utf-8"))
-    groups = data.get("groups")
-    if not isinstance(groups, dict):
-        raise BuildError(f"{EXTRA_RULES_PATH.name} 里缺少 groups 段")
-    return groups
-
-
 def summarize(document: dict) -> str:
     lines = []
     for rule in document["rules"]:
@@ -338,36 +293,9 @@ def summarize(document: dict) -> str:
     return "\n".join(lines)
 
 
-def parse_args(argv: list[str]) -> tuple[Path, Path]:
-    """返回 (规则源, 输出根目录)。--out-dir 供漂移检测脚本生成到临时目录。"""
-    source = DEFAULT_SOURCE
-    out_dir = REPO_ROOT
-    rest = list(argv[1:])
-    while rest:
-        arg = rest.pop(0)
-        if arg == "--out-dir":
-            if not rest:
-                raise BuildError("--out-dir 后面要跟目录")
-            out_dir = Path(rest.pop(0)).expanduser()
-        elif arg.startswith("--out-dir="):
-            out_dir = Path(arg.split("=", 1)[1]).expanduser()
-        else:
-            source = Path(arg).expanduser()
-    return source, out_dir
-
-
 def main(argv: list[str]) -> int:
     try:
         source, out_dir = parse_args(argv)
-    except BuildError as error:
-        print(f"错误: {error}", file=sys.stderr)
-        return 1
-
-    if not source.is_file():
-        print(f"错误: 找不到规则源 {source}", file=sys.stderr)
-        return 1
-
-    try:
         document, substituted, supplementary = build_document(parse_merge_rules(source))
     except BuildError as error:
         print(f"错误: {error}", file=sys.stderr)
@@ -379,7 +307,7 @@ def main(argv: list[str]) -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(payload, encoding="utf-8")
 
-    print(f"规则源: {source}")
+    print(f"规则源: {describe_source(source)}")
     print(summarize(document))
     print(f"内置规则集替代自 RULE-SET: {len(substituted)} 项")
     if supplementary:

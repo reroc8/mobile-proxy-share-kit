@@ -1,6 +1,6 @@
 # Karing 分流规则
 
-当前版本：`v0.3.1`
+当前版本：`v0.3.2`
 
 ## 适合谁
 
@@ -11,7 +11,7 @@
 
 ## 规则从哪来
 
-由 `scripts/build-karing-rules.py` 从 PC 版 Clash Verge 的 `Merge.yaml` 生成，**不要手改**。和 `shadowrocket/` 用的是同一个规则源、同一套分组顺序。
+由 `scripts/build-karing-rules.py` 从 PC 版仓库的 GitHub 源码生成，**不要手改**。和 `shadowrocket/` 用的是同一个规则源、同一套分组顺序。
 
 PC 靠 `RULE-SET` 表达、Karing 有内置规则集可对应的部分，用 `rule_set_build_in` 直接引用（`acl:Claude`、`geosite:google`、`acl:ChinaDomain`、`geosite:geolocation-!cn` 等），比展开成域名更省、也更新。
 
@@ -134,4 +134,4 @@ PC 版里按地区写死的域名现在都有了独立分组，不用再从别�
 
 - 这份 JSON **不含任何节点、订阅、账号**，只有分组和域名规则，可以安全公开。
 - 导入规则之前，必须先导入自己的订阅。
-- 规则由脚本从 PC 版 `Merge.yaml` 生成，不要手改 JSON —— 改了会盖掉。改完 PC 配置后跑 `bash scripts/check-drift.sh --fix` 重新生成。
+- 规则由脚本从 PC 版仓库源码生成，不要手改 JSON —— 改了会盖掉。PC 那边规则改完后，跑 `bash scripts/check-drift.sh --fix` 重新生成。

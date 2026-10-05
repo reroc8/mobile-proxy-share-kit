@@ -1,8 +1,8 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.3.1`，只维护两份产物。
+面向手机端的代理分流规则包。当前 `v0.3.2`，只维护两份产物。
 
-两份产物的规则内容都从 PC 版 Clash Verge 的 `Merge.yaml` 生成，分组结构、组顺序、规则条数都一致，不会各走各的。
+两份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组结构、组顺序、规则条数都一致，不会各走各的。
 
 这个项目只提供规则和说明，**不包含任何订阅、节点、账号、密码或 token**。使用者必须先在客户端里导入自己的订阅。
 
@@ -96,10 +96,11 @@ shadowrocket/
   README.md
 
 scripts/
-  build-karing-rules.py             Merge.yaml -> Karing JSON
-  build-shadowrocket-rules.py       Merge.yaml -> Shadowrocket .conf
+  mobile_rules.py                   两个生成脚本的公共部分（取规则源、解析、映射检查）
+  build-karing-rules.py             规则源 -> Karing JSON
+  build-shadowrocket-rules.py       规则源 -> Shadowrocket .conf
   extra-rules.json                  PC 没有、手机端补充的分组（两个脚本共用）
-  check-drift.sh                    检测产物是否落后于 PC 版配置
+  check-drift.sh                    检测产物是否落后于 PC 版源码
   check-sensitive.sh
   build-release.command
 
@@ -110,12 +111,24 @@ docs/                           GitHub Pages 手机入口页
 
 ## 规则来源与生成
 
-两份产物都是脚本产物，**不手工维护**，规则源统一是 PC 版 Clash Verge 的 `Merge.yaml`：
+两份产物都是脚本产物，**不手工维护**。规则源是 PC 版仓库的 GitHub 源码：
+
+```text
+https://raw.githubusercontent.com/reroc8/clash-verge-share-kit/main/config/Merge.yaml
+```
 
 ```bash
-python3 scripts/build-karing-rules.py       [Merge.yaml 路径] [--out-dir 目录]
-python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径] [--out-dir 目录]
+python3 scripts/build-karing-rules.py        [规则源] [--out-dir 目录]
+python3 scripts/build-shadowrocket-rules.py  [规则源] [--out-dir 目录]
 ```
+
+不传规则源就走上面的 GitHub 地址。**离线或想用本机那份配置时，传路径即可**：
+
+```bash
+python3 scripts/build-karing-rules.py ~/Desktop/Clash配置/clash-verge-share-kit/config/Merge.yaml
+```
+
+取的是 GitHub 源码而不是本机文件，好处是不依赖任何人的机器状态：谁 clone 下来跑出来的产物都一样，也能在 CI 里跑。
 
 - 显式 `DOMAIN-SUFFIX` / `DOMAIN` / `DOMAIN-KEYWORD` 直接搬运。
 - PC 端靠 `RULE-SET` 表达的宽泛覆盖，两个脚本各自换算：
@@ -130,6 +143,7 @@ python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径] [--out-dir 目�
 `v0.1.x` 到 `v0.3.0` 之间 Shadowrocket 落后了 93 条，原因是当时它由手工维护、没有接规则源。现在有三道闸：
 
 1. **脚本生成** —— 产物不再是手写的，改 PC 配置后重新生成即可，不会再出现「改了一边忘了另一边」。
+
 2. **漂移检测** —— `bash scripts/check-drift.sh` 会把产物重新生成到临时目录和仓库里的对比，
    不一致就报错并打印 diff；`--fix` 直接重新生成。
 
@@ -138,11 +152,12 @@ python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径] [--out-dir 目�
    bash scripts/check-drift.sh --fix   # 检测并重新生成
    ```
 
-3. **发版卡口** —— `build-release.command` 在打包前强制跑一次漂移检测，
-   产物和 PC 配置不一致就不出包。
+   因为规则源是 GitHub，这个检查在任何机器上都能跑，也能挂 CI。
 
-规则源在仓库外（`~/Desktop/Clash配置/...`），所以漂移检测只能在有那份配置的本机上跑。
-改完 PC 配置后、以及每次发版前，跑一次 `scripts/check-drift.sh` 就够了。
+3. **发版卡口** —— `build-release.command` 在打包前强制跑一次漂移检测，
+   产物和 PC 源码不一致就不出包。
+
+PC 版仓库的规则改完后，跑一次 `bash scripts/check-drift.sh --fix`，有差异就提交，即可保持同步。
 
 ## 参考来源
 
