@@ -22,9 +22,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # 规则源 = PC 版仓库的 GitHub 源码，不是本机某份副本。
 # 这样产物可以在任何机器上复现，不再依赖 ~/Desktop 下的本地路径，
 # 也不会因为本地文件没提交就和真源不一致。
+SOURCE_REPO = "reroc8/clash-verge-share-kit"
 SOURCE_URL = (
-    "https://raw.githubusercontent.com/reroc8/clash-verge-share-kit/main/config/Merge.yaml"
+    f"https://raw.githubusercontent.com/{SOURCE_REPO}/main/config/Merge.yaml"
 )
+SOURCE_VERSION_URL = f"https://raw.githubusercontent.com/{SOURCE_REPO}/main/VERSION.txt"
 
 EXTRA_RULES_PATH = REPO_ROOT / "scripts" / "extra-rules.json"
 
@@ -33,6 +35,28 @@ DOMAIN_TYPES = ("DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD")
 
 class BuildError(Exception):
     """规则源有问题、或者映射表没登记的情况，一律报错而不是猜。"""
+
+
+def fetch_source_version(source: str) -> str | None:
+    """取 PC 仓库当前的 VERSION.txt，用于在产物里标注「对应 PC 的哪一版」。
+
+    手机端和 PC 端的版本号是两套独立编号，光看手机端的 vX.Y.Z 无法知道它
+    对应 PC 的哪一版，所以把这个信息写进产物头部。
+
+    取不到就返回 None：这是附加信息，不值得因为它让整个生成失败。调用方
+    会标成「unknown」，不会因为网络抖动让产物内容变成另一份。
+    """
+    try:
+        if source.startswith(("http://", "https://")):
+            with urllib.request.urlopen(SOURCE_VERSION_URL, timeout=30) as response:
+                return response.read().decode("utf-8").strip()
+        # 本地副本：PC 的 VERSION.txt 在 Merge.yaml 所在 config/ 的上一级
+        candidate = Path(source).expanduser().resolve().parent.parent / "VERSION.txt"
+        if candidate.is_file():
+            return candidate.read_text(encoding="utf-8").strip()
+    except (urllib.error.URLError, TimeoutError, OSError):
+        pass
+    return None
 
 
 def read_source(source: str) -> str:

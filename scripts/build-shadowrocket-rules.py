@@ -42,8 +42,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
     DOMAIN_TYPES,
     REPO_ROOT,
+    SOURCE_REPO,
     BuildError,
     describe_source,
+    fetch_source_version,
     load_extra_rules,
     parse_args,
     parse_merge_rules,
@@ -199,10 +201,17 @@ RULE_SET_COVERAGE = {
 # Shadowrocket 没有匹配到的规则类型，显式跳过而不是静默丢弃。
 SKIP_PREFIXES = ("PROCESS-NAME", "PROCESS-PATH", "MATCH", "GEOIP", "SRC-IP-CIDR")
 
-HEADER = (
-    "# Mobile Proxy Share Kit for Shadowrocket",
-    "# 由 scripts/build-shadowrocket-rules.py 从 PC 版 Merge.yaml 生成，勿手改。",
-)
+HEADER_FIRST_LINE = "# Mobile Proxy Share Kit for Shadowrocket"
+
+
+def build_header(source_version: str | None) -> list[str]:
+    """产物头部。带上 PC 源版本 —— 手机端和 PC 端是两套独立编号，
+    只写手机端版本没法知道这份规则对应 PC 的哪一版。"""
+    return [
+        HEADER_FIRST_LINE,
+        "# 由 scripts/build-shadowrocket-rules.py 从 PC 版规则源生成，勿手改。",
+        f"# Source: {SOURCE_REPO} {source_version or 'unknown'}",
+    ]
 
 GENERAL = (
     "[General]",
@@ -298,8 +307,12 @@ def render_rules(rules: dict[str, list[tuple[str, str]]]) -> list[str]:
     return lines
 
 
-def render(rules: dict[str, list[tuple[str, str]]], include_proxy_group: bool) -> str:
-    body = list(HEADER)
+def render(
+    rules: dict[str, list[tuple[str, str]]],
+    include_proxy_group: bool,
+    source_version: str | None,
+) -> str:
+    body = build_header(source_version)
     body += ["", *GENERAL]
     if include_proxy_group:
         body += ["", *PROXY_GROUP]
@@ -318,8 +331,9 @@ def main(argv: list[str]) -> int:
     try:
         source, out_dir = parse_args(argv)
         rules = collect(parse_merge_rules(source))
-        slim = render(rules, include_proxy_group=False)
-        full = render(rules, include_proxy_group=True)
+        source_version = fetch_source_version(source)
+        slim = render(rules, include_proxy_group=False, source_version=source_version)
+        full = render(rules, include_proxy_group=True, source_version=source_version)
     except BuildError as error:
         print(f"错误: {error}", file=sys.stderr)
         return 1

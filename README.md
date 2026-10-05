@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.3.2`，只维护两份产物。
+面向手机端的代理分流规则包。当前 `v0.3.3`，只维护两份产物。
 
 两份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组结构、组顺序、规则条数都一致，不会各走各的。
 
@@ -108,6 +108,18 @@ docs/                           GitHub Pages 手机入口页
   index.html
   karing/karing-diversion-rules.json   Pages 同源下载副本，由脚本同步
 ```
+
+## 版本号怎么算
+
+手机端和 PC 版是**两套独立的版本号**，不要互相对照：
+
+- **手机端版本**（本仓库的 `VERSION.txt`）只表示手机端自己的变更。手机端有 PC 没有的东西（交易所分组、手机端导入流程），也有自己的发布节奏，所以走独立的语义化版本。
+- **PC 版版本**（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `VERSION.txt`）是规则内容的真源版本，目前是 `v0.3.34`。
+
+两套编号恰好都是 `v0.3.x`，但**没有任何对应关系**。想确认某份产物是从 PC 的哪一版生成的：
+
+- Shadowrocket 的 `.conf` 头部有一行 `# Source: reroc8/clash-verge-share-kit v0.3.34`。
+- Karing 的 JSON 是 Karing 私有格式，不往里加自定义字段（避免导入被拒），对应关系记在 `CHANGELOG.md` 每版条目里。
 
 ## 规则来源与生成
 

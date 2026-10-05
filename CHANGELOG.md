@@ -1,5 +1,29 @@
 # Changelog
 
+手机端和 PC 版（[`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit)）
+是**两套独立的版本号**，不要互相对照。手机端有自己的发布节奏（比如交易所分组是手机端独有的，
+PC 没有），版本号只表示手机端自己的变更。
+
+每版对应的 PC 源版本记在下面，Shadowrocket 的 `.conf` 头部也会写一行 `# Source: ...`，
+一眼能看出这份规则是从 PC 的哪一版生成的。Karing 的 JSON 是 Karing 私有格式，
+不往里塞自定义字段（避免导入被拒），对应关系看这里的记录。
+
+## v0.3.3
+
+- Shadowrocket 三份 `.conf` 的头部新增 `# Source: reroc8/clash-verge-share-kit v0.3.34`，
+  标明该产物由 PC 的哪一版生成。此前产物里没有任何信息能追溯它对应 PC 的哪一版 ——
+  两套版本号又都是 `v0.3.x`，很容易误以为有关系。
+- 新增 `mobile_rules.fetch_source_version()`：从 PC 仓库拉 `VERSION.txt`，取不到不阻断生成。
+- README 补充版本号说明。
+- **对应 PC 源：`v0.3.34`**（规则内容与 v0.3.2 相同，仅新增来源标注）
+
+  回填历史对应关系：
+
+  | 手机端 | 对应 PC 源 |
+  |---|---|
+  | v0.1.0 ~ v0.1.2 | 手工维护，不对应任何 PC 版本 |
+  | v0.2.0 起 | `v0.3.34` |
+
 ## v0.3.2
 
 - **规则源改为 PC 版仓库的 GitHub 源码**，不再读本机 `~/Desktop/Clash配置/.../Merge.yaml`：
