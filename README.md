@@ -1,17 +1,17 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.3.0`，只维护两份产物。
+面向手机端的代理分流规则包。当前 `v0.3.1`，只维护两份产物。
 
-两份产物的规则内容都从 PC 版 Clash Verge 的 `Merge.yaml` 生成，不会各走各的。
+两份产物的规则内容都从 PC 版 Clash Verge 的 `Merge.yaml` 生成，分组结构、组顺序、规则条数都一致，不会各走各的。
 
 这个项目只提供规则和说明，**不包含任何订阅、节点、账号、密码或 token**。使用者必须先在客户端里导入自己的订阅。
 
 ## 两份产物
 
-| 产物 | 覆盖 | 说明 |
+| 产物 | 覆盖 | 分组数 |
 |---|---|---|
-| [`karing/`](karing/) | Karing（iOS / Android / Windows / macOS） | 自定义分流组 JSON，推荐 |
-| [`shadowrocket/`](shadowrocket/) | Shadowrocket（iOS） | `.conf` 规则文件 |
+| [`karing/`](karing/) | Karing（iOS / Android / Windows / macOS） | 10 |
+| [`shadowrocket/`](shadowrocket/) | Shadowrocket（iOS） | 10 |
 
 用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核、免费、全平台，规则也能和 PC 版共用同一套逻辑，省一份维护成本。
 
@@ -98,6 +98,8 @@ shadowrocket/
 scripts/
   build-karing-rules.py             Merge.yaml -> Karing JSON
   build-shadowrocket-rules.py       Merge.yaml -> Shadowrocket .conf
+  extra-rules.json                  PC 没有、手机端补充的分组（两个脚本共用）
+  check-drift.sh                    检测产物是否落后于 PC 版配置
   check-sensitive.sh
   build-release.command
 
@@ -111,8 +113,8 @@ docs/                           GitHub Pages 手机入口页
 两份产物都是脚本产物，**不手工维护**，规则源统一是 PC 版 Clash Verge 的 `Merge.yaml`：
 
 ```bash
-python3 scripts/build-karing-rules.py      [Merge.yaml 路径]   # Karing
-python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径]   # Shadowrocket
+python3 scripts/build-karing-rules.py       [Merge.yaml 路径] [--out-dir 目录]
+python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径] [--out-dir 目录]
 ```
 
 - 显式 `DOMAIN-SUFFIX` / `DOMAIN` / `DOMAIN-KEYWORD` 直接搬运。
@@ -120,11 +122,27 @@ python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径]   # Shadowrocket
   Karing 用内置规则集（`geosite:*` / `geoip:*` / `acl:*`），
   Shadowrocket 展开成显式域名（脚本里的 `RULE_SET_EXPANSION`）。
 - `PROCESS-NAME`、`IP-CIDR`、`MATCH` 这类搬不过去的，在脚本里显式跳过，不静默丢弃。
-- 未登记的规则集、未知策略名、未处理的规则类型、空策略组，都会直接报错退出，
-  防止 PC 端改了而这两份产物悄悄落后。
+- 未登记的规则集、未知策略名、未处理的规则类型、一个策略被两个组声明、空分组，
+  都会直接报错退出。
 
-`Shadowrocket` 有三份 `.conf`，`rules.conf` 与 `Shadowrocket.conf` 内容必须逐字节一致，
-`build-release.command` 会校验；Karing 的 `karing/` 与 `docs/karing/` 同理。
+## 怎么保证不再落后于 PC 版
+
+`v0.1.x` 到 `v0.3.0` 之间 Shadowrocket 落后了 93 条，原因是当时它由手工维护、没有接规则源。现在有三道闸：
+
+1. **脚本生成** —— 产物不再是手写的，改 PC 配置后重新生成即可，不会再出现「改了一边忘了另一边」。
+2. **漂移检测** —— `bash scripts/check-drift.sh` 会把产物重新生成到临时目录和仓库里的对比，
+   不一致就报错并打印 diff；`--fix` 直接重新生成。
+
+   ```bash
+   bash scripts/check-drift.sh         # 只检测
+   bash scripts/check-drift.sh --fix   # 检测并重新生成
+   ```
+
+3. **发版卡口** —— `build-release.command` 在打包前强制跑一次漂移检测，
+   产物和 PC 配置不一致就不出包。
+
+规则源在仓库外（`~/Desktop/Clash配置/...`），所以漂移检测只能在有那份配置的本机上跑。
+改完 PC 配置后、以及每次发版前，跑一次 `scripts/check-drift.sh` 就够了。
 
 ## 参考来源
 

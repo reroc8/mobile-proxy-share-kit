@@ -1,0 +1,41 @@
+{
+  "_comment": [
+    "PC 版 Merge.yaml 里没有、但手机端产物需要保留的分组。",
+    "scripts/build-karing-rules.py 和 scripts/build-shadowrocket-rules.py 共用这份定义，",
+    "避免两个产物各自维护一份而漂移。改这里就够了，不用改脚本。"
+  ],
+  "groups": {
+    "Exchange": {
+      "note": "交易所。PC 版没有这块业务，手机端保留是为了两个客户端能力一致。",
+      "suggested_nodes": "台湾、新加坡节点",
+      "rules": [
+        ["DOMAIN-SUFFIX", "okx.com"],
+        ["DOMAIN-SUFFIX", "okx-dns.com"],
+        ["DOMAIN-SUFFIX", "bybit.com"],
+        ["DOMAIN-SUFFIX", "bycsi.com"],
+        ["DOMAIN-SUFFIX", "binance.com"],
+        ["DOMAIN-SUFFIX", "binance.me"],
+        ["DOMAIN-SUFFIX", "binance.info"],
+        ["DOMAIN-SUFFIX", "binancecnt.com"],
+        ["DOMAIN-SUFFIX", "bntrace.com"],
+        ["DOMAIN-SUFFIX", "bitget.com"],
+        ["DOMAIN-SUFFIX", "gate.io"],
+        ["DOMAIN-SUFFIX", "gateio.live"],
+        ["DOMAIN-SUFFIX", "kucoin.com"],
+        ["DOMAIN-SUFFIX", "kucnck.com"],
+        ["DOMAIN-SUFFIX", "mexc.com"],
+        ["DOMAIN-SUFFIX", "mexc.co"],
+        ["DOMAIN-SUFFIX", "crypto.com"],
+        ["DOMAIN-SUFFIX", "coinbase.com"],
+        ["DOMAIN-SUFFIX", "kraken.com"],
+        ["DOMAIN-SUFFIX", "htx.com"],
+        ["DOMAIN-SUFFIX", "huobi.com"],
+        ["DOMAIN-SUFFIX", "bingx.com"],
+        ["DOMAIN-SUFFIX", "bitmart.com"],
+        ["DOMAIN-SUFFIX", "bitfinex.com"],
+        ["DOMAIN-SUFFIX", "bitstamp.net"],
+        ["DOMAIN-SUFFIX", "upbit.com"]
+      ]
+    }
+  }
+}

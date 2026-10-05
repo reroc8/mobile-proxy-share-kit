@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.1
+
+- **补齐 Karing 与 Shadowrocket 的同构性**。两份产物此前分组不一致：
+  - Karing 新增 `💱 交易所`（26 条），此前只有小火箭能分流交易所。
+  - Karing 把 `🚀 代理` 里混着的地区锁定域名拆成 `🇺🇸 美国` 和 `🇸🇬 新加坡` 两个独立组，PC 版本来就是分开的。
+  - 两份产物现在都是 10 个分组，分组名与顺序一一对应，Karing 比 Shadowrocket 多出的域名条目为 **0**。
+- **修正 Karing 的规则顺序**：`🎬 YouTube` 移到 `🌐 Google` 之前。此前 `youtubei.googleapis.com` 会被 `googleapis.com` 抢走，永远进不了 YouTube 组。
+- 两份产物的组顺序统一为「精确规则 → 国内直连 → 代理」。精确规则必须前置，否则 `tgalileo.com` 这类「在 cn 域名库里但要走代理」的域名会被判成直连，和 PC 的意图相反。
+- 新增 `scripts/check-drift.sh`：把产物重新生成到临时目录再和仓库里的逐字节对比，不一致就报错并打印 diff，`--fix` 直接重新生成。
+- `build-release.command` 打包前强制跑漂移检测，产物落后于 PC 配置就不出包。
+- 手机端独有分组（交易所）的定义挪到 `scripts/extra-rules.json`，两个生成脚本共用一份，不再各写各的。
+- 两个生成脚本支持 `--out-dir`；新增「一个 PC 策略被两个分组声明」的报错，避免先声明的组静默吞掉规则。
+
 ## v0.3.0
 
 - **Shadowrocket 规则对齐 PC 版**。此前它停在 v0.1.2 的手工快照上，PC 端后续新增的 93 条域名一条都没跟过来；现在两份产物的规则源统一为 PC 版 `Merge.yaml`，缺口为 0。

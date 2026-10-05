@@ -19,7 +19,7 @@ PC 版 Merge.yaml 逐渐漂移，所以以 Merge.yaml 为唯一规则源，脚�
 
 用法
 ----
-    python3 scripts/build-karing-rules.py [Merge.yaml 路径]
+    python3 scripts/build-karing-rules.py [Merge.yaml 路径] [--out-dir 目录]
 
 不传路径时读取 DEFAULT_SOURCE。产出两份内容完全一致的 JSON：
     karing/karing-diversion-rules.json        发布包内的正式产物
@@ -39,19 +39,32 @@ DEFAULT_SOURCE = (
     Path.home() / "Desktop" / "Clash配置" / "clash-verge-share-kit" / "config" / "Merge.yaml"
 )
 
-OUTPUT_PATHS = (
-    REPO_ROOT / "karing" / "karing-diversion-rules.json",
-    REPO_ROOT / "docs" / "karing" / "karing-diversion-rules.json",
+EXTRA_RULES_PATH = REPO_ROOT / "scripts" / "extra-rules.json"
+
+# 产物路径相对于「输出根目录」。默认是仓库根，可用 --out-dir 指向别处，
+# 供 scripts/check-drift.sh 生成到临时目录做比对。
+OUTPUT_SUFFIXES = (
+    Path("karing") / "karing-diversion-rules.json",
+    Path("docs") / "karing" / "karing-diversion-rules.json",
 )
 
 # ── 分组成员 ────────────────────────────────────────────────────────────────
 # 顺序即 Karing「分流规则」页里的匹配顺序，元素越靠前优先级越高。
+# 两个产物的组顺序必须一致：Shadowrocket 脚本里是同一个列表。
+#
+# 精确规则（Claude / AI / YouTube / Google / Exchange / Telegram / US / SG）全部排在
+# 宽泛规则（国内直连 / 代理）之前，这是硬要求：PC 版里 tgalileo.com 同时出现在
+# cn-domain 规则集里，靠「精确规则前置」才能改走代理。国内直连一旦提前就会把它
+# 判成直连，和 PC 的意图相反。
+#
+# YouTube 又必须排在 Google 之前：youtubei.googleapis.com 会被 googleapis.com 抢走。
+#
+# clash_targets 是 Merge.yaml 里该组的策略名。extra 是从
+# scripts/extra-rules.json 读的、PC 没有的分组。
+#
 # outbound 只写「开箱可用」的值：currentSelected（当前选择）/ direct（直连）。
 # 地区隔离（例如 Claude 只走美国）需要用户自己的地区自动选择组，在
 # 「分流规则」页逐组改出站，不写进 JSON —— 因为组名由用户自己起。
-#
-# clash_targets 是 Merge.yaml 里该组的策略名；US / SG 这类 PC 专属地区组
-# 没有对应的 Karing 组，统一并入 🚀 代理。
 #
 # build_in 是 Karing 内置规则集，用来补上 Merge.yaml 里靠 RULE-SET 表达的
 # 宽泛覆盖。名字取自 Karing 自带预设 assets/datas/preset/{default,cn}.json。
@@ -69,15 +82,22 @@ GROUPS = (
         "build_in": ("geosite:openai", "geoip:openai", "acl:Gemini"),
     },
     {
+        "name": "🎬 YouTube",
+        "outbound": "currentSelected",
+        "clash_targets": ("YouTube",),
+        "build_in": (),
+    },
+    {
         "name": "🌐 Google",
         "outbound": "currentSelected",
         "clash_targets": ("Google",),
         "build_in": ("geosite:google",),
     },
     {
-        "name": "🎬 YouTube",
+        "name": "💱 交易所",
         "outbound": "currentSelected",
-        "clash_targets": ("YouTube",),
+        "clash_targets": (),
+        "extra": "Exchange",
         "build_in": (),
     },
     {
@@ -85,6 +105,18 @@ GROUPS = (
         "outbound": "currentSelected",
         "clash_targets": ("Telegram",),
         "build_in": ("geoip:telegram",),
+    },
+    {
+        "name": "🇺🇸 美国",
+        "outbound": "currentSelected",
+        "clash_targets": ("US",),
+        "build_in": (),
+    },
+    {
+        "name": "🇸🇬 新加坡",
+        "outbound": "currentSelected",
+        "clash_targets": ("SG",),
+        "build_in": (),
     },
     {
         "name": "🏠 国内直连",
@@ -95,7 +127,7 @@ GROUPS = (
     {
         "name": "🚀 代理",
         "outbound": "currentSelected",
-        "clash_targets": ("Proxies", "US", "SG"),
+        "clash_targets": ("Proxies",),
         "build_in": ("geosite:geolocation-!cn",),
     },
 )
@@ -171,6 +203,12 @@ def build_document(entries: list[tuple[str, str, str]]) -> dict:
     group_of_target = {}
     for group in GROUPS:
         for target in group["clash_targets"]:
+            # 一个 PC 策略只能归一个 Karing 组。漏改这里会让先声明的组静默吞掉规则，
+            # 所以宁可报错也不要「后者覆盖前者」。
+            if target in group_of_target:
+                raise BuildError(
+                    f"策略 {target!r} 同时被 {group_of_target[target]} 和 {group['name']} 声明"
+                )
             group_of_target[target] = group["name"]
 
     referenced_build_in: set[tuple[str, str]] = set()
@@ -217,6 +255,27 @@ def build_document(entries: list[tuple[str, str, str]]) -> dict:
         if normalized not in bucket[key]:
             bucket[key].append(normalized)
 
+    # PC 没有的分组，规则来自 scripts/extra-rules.json
+    extra_definitions = load_extra_rules()
+    for group in GROUPS:
+        extra_key = group.get("extra")
+        if not extra_key:
+            continue
+        if extra_key not in extra_definitions:
+            raise BuildError(f"{group['name']} 组引用了 extra-rules.json 里不存在的 {extra_key!r}")
+        bucket = by_group[group["name"]]
+        for rule_type, value in extra_definitions[extra_key]["rules"]:
+            if rule_type == "DOMAIN-SUFFIX":
+                key, normalized = "domain_suffix", value if value.startswith(".") else "." + value
+            elif rule_type == "DOMAIN":
+                key, normalized = "domain", value
+            elif rule_type == "DOMAIN-KEYWORD":
+                key, normalized = "domain_keyword", value
+            else:
+                raise BuildError(f"extra-rules.json 里 {extra_key!r} 出现未处理的类型 {rule_type!r}")
+            if normalized not in bucket[key]:
+                bucket[key].append(normalized)
+
     rules = []
     for group in GROUPS:
         name = group["name"]
@@ -234,7 +293,11 @@ def build_document(entries: list[tuple[str, str, str]]) -> dict:
             rule["rule_set_build_in"] = list(group["build_in"])
 
         if len(rule) <= 4:
-            raise BuildError(f"{name} 组没有任何规则，检查 Merge.yaml 是否还包含对应策略")
+            missing = "、".join(group["clash_targets"]) or group.get("extra", "")
+            raise BuildError(
+                f"{name} 组没有任何规则（来自策略 {missing}）；"
+                "检查 Merge.yaml 或 extra-rules.json 是否还包含对应内容"
+            )
         rules.append(rule)
 
     # build_in 里有些是 RULE-SET 的替代品，有些是纯补充（例如 acl:Claude 用来补齐
@@ -252,6 +315,17 @@ def build_document(entries: list[tuple[str, str, str]]) -> dict:
     return {"rules": rules}, substituted, supplementary
 
 
+def load_extra_rules() -> dict:
+    """读取 PC 没有、手机端自己补充的分组定义。两个生成脚本共用这一份。"""
+    if not EXTRA_RULES_PATH.is_file():
+        raise BuildError(f"缺少 {EXTRA_RULES_PATH.relative_to(REPO_ROOT)}")
+    data = json.loads(EXTRA_RULES_PATH.read_text(encoding="utf-8"))
+    groups = data.get("groups")
+    if not isinstance(groups, dict):
+        raise BuildError(f"{EXTRA_RULES_PATH.name} 里缺少 groups 段")
+    return groups
+
+
 def summarize(document: dict) -> str:
     lines = []
     for rule in document["rules"]:
@@ -260,12 +334,35 @@ def summarize(document: dict) -> str:
             for key in ("domain_suffix", "domain", "domain_keyword", "rule_set_build_in")
             if key in rule
         )
-        lines.append(f"  {rule['name']:<12} outbound={rule['outbound']:<15} {counts}")
+        lines.append(f"  {rule['name']:<14} outbound={rule['outbound']:<15} {counts}")
     return "\n".join(lines)
 
 
+def parse_args(argv: list[str]) -> tuple[Path, Path]:
+    """返回 (规则源, 输出根目录)。--out-dir 供漂移检测脚本生成到临时目录。"""
+    source = DEFAULT_SOURCE
+    out_dir = REPO_ROOT
+    rest = list(argv[1:])
+    while rest:
+        arg = rest.pop(0)
+        if arg == "--out-dir":
+            if not rest:
+                raise BuildError("--out-dir 后面要跟目录")
+            out_dir = Path(rest.pop(0)).expanduser()
+        elif arg.startswith("--out-dir="):
+            out_dir = Path(arg.split("=", 1)[1]).expanduser()
+        else:
+            source = Path(arg).expanduser()
+    return source, out_dir
+
+
 def main(argv: list[str]) -> int:
-    source = Path(argv[1]).expanduser() if len(argv) > 1 else DEFAULT_SOURCE
+    try:
+        source, out_dir = parse_args(argv)
+    except BuildError as error:
+        print(f"错误: {error}", file=sys.stderr)
+        return 1
+
     if not source.is_file():
         print(f"错误: 找不到规则源 {source}", file=sys.stderr)
         return 1
@@ -276,8 +373,9 @@ def main(argv: list[str]) -> int:
         print(f"错误: {error}", file=sys.stderr)
         return 1
 
+    outputs = [out_dir / suffix for suffix in OUTPUT_SUFFIXES]
     payload = json.dumps(document, ensure_ascii=False, indent=2) + "\n"
-    for output in OUTPUT_PATHS:
+    for output in outputs:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(payload, encoding="utf-8")
 
@@ -286,8 +384,8 @@ def main(argv: list[str]) -> int:
     print(f"内置规则集替代自 RULE-SET: {len(substituted)} 项")
     if supplementary:
         print(f"内置规则集纯补充: {', '.join(supplementary)}")
-    for output in OUTPUT_PATHS:
-        print(f"已写入: {output.relative_to(REPO_ROOT)}")
+    for output in outputs:
+        print(f"已写入: {output}")
     return 0
 
 

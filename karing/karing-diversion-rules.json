@@ -134,6 +134,24 @@
     },
     {
       "outbound": "currentSelected",
+      "name": "🎬 YouTube",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".youtube.com",
+        ".youtu.be",
+        ".youtube-nocookie.com",
+        ".youtubeeducation.com",
+        ".youtubegaming.com",
+        ".youtubekids.com",
+        ".googlevideo.com",
+        ".ytimg.com",
+        ".youtubei.googleapis.com",
+        ".yt3.ggpht.com"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
       "name": "🌐 Google",
       "switch": true,
       "or": true,
@@ -157,20 +175,36 @@
     },
     {
       "outbound": "currentSelected",
-      "name": "🎬 YouTube",
+      "name": "💱 交易所",
       "switch": true,
       "or": true,
       "domain_suffix": [
-        ".youtube.com",
-        ".youtu.be",
-        ".youtube-nocookie.com",
-        ".youtubeeducation.com",
-        ".youtubegaming.com",
-        ".youtubekids.com",
-        ".googlevideo.com",
-        ".ytimg.com",
-        ".youtubei.googleapis.com",
-        ".yt3.ggpht.com"
+        ".okx.com",
+        ".okx-dns.com",
+        ".bybit.com",
+        ".bycsi.com",
+        ".binance.com",
+        ".binance.me",
+        ".binance.info",
+        ".binancecnt.com",
+        ".bntrace.com",
+        ".bitget.com",
+        ".gate.io",
+        ".gateio.live",
+        ".kucoin.com",
+        ".kucnck.com",
+        ".mexc.com",
+        ".mexc.co",
+        ".crypto.com",
+        ".coinbase.com",
+        ".kraken.com",
+        ".htx.com",
+        ".huobi.com",
+        ".bingx.com",
+        ".bitmart.com",
+        ".bitfinex.com",
+        ".bitstamp.net",
+        ".upbit.com"
       ]
     },
     {
@@ -194,6 +228,27 @@
       ],
       "rule_set_build_in": [
         "geoip:telegram"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
+      "name": "🇺🇸 美国",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".lexmount.com",
+        ".muse.meta.com",
+        ".muse.ai",
+        ".mail.com"
+      ]
+    },
+    {
+      "outbound": "currentSelected",
+      "name": "🇸🇬 新加坡",
+      "switch": true,
+      "or": true,
+      "domain_suffix": [
+        ".dola.com"
       ]
     },
     {
@@ -261,12 +316,7 @@
       "or": true,
       "domain_suffix": [
         ".tgalileo.com",
-        ".lexmount.com",
-        ".muse.meta.com",
-        ".muse.ai",
-        ".dola.com",
-        ".developer.apple.com",
-        ".mail.com"
+        ".developer.apple.com"
       ],
       "domain": [
         "gateway.icloud.com",

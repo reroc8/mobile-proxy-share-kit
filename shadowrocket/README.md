@@ -1,6 +1,6 @@
 # Shadowrocket 小火箭 AI 风控稳定规则
 
-当前版本：`v0.3.0`
+当前版本：`v0.3.1`
 
 ## 适合谁
 
@@ -65,20 +65,26 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 
 ## 规则顺序
 
-1. 局域网和本机地址直连。
-2. 国内 AI 服务、钉钉、腾讯系，以及国内常见网站直连。
-3. Claude 先命中 `Claude`。
-4. OpenAI / Gemini / Copilot / Cursor 等 AI 服务命中 `AI`。
-5. YouTube 命中 `YouTube`。
-6. Google 登录和 Gmail 命中 `Google`。
-7. 交易所命中 `Exchange`。
-8. Telegram 命中 `Telegram`。
-9. `US` / `SG` 对应的地区锁定站点。
+1. 局域网和本机地址直连（`Rule` 段开头，固定不动）。
+2. Claude 命中 `Claude`。
+3. OpenAI / Gemini / Copilot / Cursor 等 AI 服务命中 `AI`。
+4. YouTube 命中 `YouTube`。
+5. Google 登录和 Gmail 命中 `Google`。
+6. 交易所命中 `Exchange`。
+7. Telegram 命中 `Telegram`。
+8. `US` / `SG` 对应的地区锁定站点。
+9. 国内 AI 服务、钉钉、腾讯系，以及国内常见网站直连。
 10. 明确海外常见服务命中 `Proxy`。
 11. 中国大陆 IP 直连。
 12. 未命中规则默认直连。
 
-**YouTube 必须排在 Google 前面**：`youtubei.googleapis.com` 会被 `googleapis.com` 抢走。PC 版也是先写 YouTube 再套 Google 规则集，这里对齐它。
+顺序不能乱，有两条硬要求：
+
+**1. `YouTube` 必须排在 `Google` 前面。** 否则 `youtubei.googleapis.com` 会被 `googleapis.com` 抢走，永远进不了 `YouTube`。
+
+**2. 所有精确策略必须排在国内直连和 `Proxy` 前面。** PC 版里有 `tgalileo.com` 这种「在 cn 域名库里、但要走代理」的域名，靠精确规则前置才能改走代理。国内直连一旦提前就会把它判成直连，和 PC 的意图正好相反。
+
+这份顺序和 `karing/` 那份完全一致，两个客户端行为一样。
 
 ## 与 PC 版的差异
 
@@ -90,7 +96,7 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 | `RULE-SET,cn-ip` / `private-ip` | 由 `GEOIP,CN,DIRECT` 和开头的 `IP-CIDR` 覆盖 |
 | `RULE-SET,apple` / `icloud` | 不单列，兜底就是直连 |
 | `PROCESS-NAME-REGEX` 进程级规则（钉钉、Muse） | 小火箭没有进程名匹配，不预置 |
-| 交易所分组 | **Shadowrocket 独有**，PC 版没有这块业务 |
+| 交易所分组 | **手机端独有**，PC 版没有这块业务 |
 
 ## 导入后 60 秒检查
 

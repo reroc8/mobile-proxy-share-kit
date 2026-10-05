@@ -48,6 +48,14 @@ if ! diff -q "$ROOT_DIR/shadowrocket/Shadowrocket.conf" \
     exit 1
 fi
 
+# 最关键的一步：确认两份产物就是「用当前 PC 版 Merge.yaml 生成的结果」。
+# 缺了这一步，PC 改了规则而产物没重新生成，发出去的还是旧规则。
+if ! "$ROOT_DIR/scripts/check-drift.sh" >/dev/null; then
+    echo "错误: 产物与 PC 版配置不一致，先跑 scripts/check-drift.sh --fix"
+    "$ROOT_DIR/scripts/check-drift.sh" || true
+    exit 1
+fi
+
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -61,6 +69,8 @@ cp "$ROOT_DIR/karing/README.md" "$TMP_DIR/karing/README.md"
 cp "$ROOT_DIR/karing/"*.json "$TMP_DIR/karing/"
 cp "$ROOT_DIR/scripts/build-karing-rules.py" "$TMP_DIR/scripts/build-karing-rules.py"
 cp "$ROOT_DIR/scripts/build-shadowrocket-rules.py" "$TMP_DIR/scripts/build-shadowrocket-rules.py"
+cp "$ROOT_DIR/scripts/extra-rules.json" "$TMP_DIR/scripts/extra-rules.json"
+cp "$ROOT_DIR/scripts/check-drift.sh" "$TMP_DIR/scripts/check-drift.sh"
 cp "$ROOT_DIR/docs/index.html" "$TMP_DIR/docs/index.html"
 cp "$ROOT_DIR/docs/assets/shadowrocket-full-qr.png" "$TMP_DIR/docs/assets/shadowrocket-full-qr.png"
 cp "$ROOT_DIR/docs/karing/"*.json "$TMP_DIR/docs/karing/"

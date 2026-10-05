@@ -25,23 +25,33 @@ Shadowrocket 的规则原来是手工维护的，停在了 v0.1.2 的快照上�
 
 用法
 ----
-    python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径]
+    python3 scripts/build-shadowrocket-rules.py [Merge.yaml 路径] [--out-dir 目录]
 """
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SHADOWROCKET_DIR = REPO_ROOT / "shadowrocket"
 
 DEFAULT_SOURCE = (
     Path.home() / "Desktop" / "Clash配置" / "clash-verge-share-kit" / "config" / "Merge.yaml"
 )
 
-# PC 策略名 -> Shadowrocket 策略名。US / SG 在 Shadowrocket 侧新建同名策略组。
+EXTRA_RULES_PATH = REPO_ROOT / "scripts" / "extra-rules.json"
+
+# 产物路径相对于「输出根目录」。默认是仓库根，可用 --out-dir 指向别处，
+# 供 scripts/check-drift.sh 生成到临时目录做比对。
+OUTPUT_NAMES = (
+    "Shadowrocket.rules.conf",
+    "Shadowrocket.conf",
+    "Shadowrocket.full.conf",
+)
+
+# PC 策略名 -> Shadowrocket 策略名。US / SG 在两个产物里都是独立策略组。
 TARGET_MAP = {
     "DIRECT": "DIRECT",
     "Claude": "Claude",
@@ -55,11 +65,14 @@ TARGET_MAP = {
 }
 
 # 输出顺序即 Rule 段的书写顺序，Shadowrocket 自上而下匹配，先命中先生效。
+# 这份顺序必须和 scripts/build-karing-rules.py 里的 GROUPS 完全一致。
 #
-# YouTube 必须排在 Google 前面：YouTube 的 .youtubei.googleapis.com 会被 Google 的
-# .googleapis.com 抢走。PC 版也是先写 YouTube 再套 RULE-SET,google，这里对齐它。
+# 精确规则全部排在宽泛规则（DIRECT / Proxy）之前，这是硬要求：PC 版里
+# tgalileo.com 同时出现在 cn-domain 规则集里，靠「精确规则前置」才能改走代理。
+# DIRECT 一旦提前就会把它判成直连，和 PC 的意图相反。
+#
+# YouTube 又必须排在 Google 之前：youtubei.googleapis.com 会被 googleapis.com 抢走。
 OUTPUT_ORDER = (
-    "DIRECT",
     "Claude",
     "AI",
     "YouTube",
@@ -68,6 +81,7 @@ OUTPUT_ORDER = (
     "Telegram",
     "US",
     "SG",
+    "DIRECT",
     "Proxy",
 )
 
@@ -152,38 +166,8 @@ RULE_SET_EXPANSION = {
     ),
 }
 
-# Shadowrocket 独有的业务，PC 版完全没有对应分组，保留是为了不砍功能。
-# 对齐 PC 不等于砍掉 PC 没有的东西 —— 只砍 PC 明确判定为误绑的。
-SHADOWROCKET_ONLY = {
-    "Exchange": (
-        ("DOMAIN-SUFFIX", "okx.com"),
-        ("DOMAIN-SUFFIX", "okx-dns.com"),
-        ("DOMAIN-SUFFIX", "bybit.com"),
-        ("DOMAIN-SUFFIX", "bycsi.com"),
-        ("DOMAIN-SUFFIX", "binance.com"),
-        ("DOMAIN-SUFFIX", "binance.me"),
-        ("DOMAIN-SUFFIX", "binance.info"),
-        ("DOMAIN-SUFFIX", "binancecnt.com"),
-        ("DOMAIN-SUFFIX", "bntrace.com"),
-        ("DOMAIN-SUFFIX", "bitget.com"),
-        ("DOMAIN-SUFFIX", "gate.io"),
-        ("DOMAIN-SUFFIX", "gateio.live"),
-        ("DOMAIN-SUFFIX", "kucoin.com"),
-        ("DOMAIN-SUFFIX", "kucnck.com"),
-        ("DOMAIN-SUFFIX", "mexc.com"),
-        ("DOMAIN-SUFFIX", "mexc.co"),
-        ("DOMAIN-SUFFIX", "crypto.com"),
-        ("DOMAIN-SUFFIX", "coinbase.com"),
-        ("DOMAIN-SUFFIX", "kraken.com"),
-        ("DOMAIN-SUFFIX", "htx.com"),
-        ("DOMAIN-SUFFIX", "huobi.com"),
-        ("DOMAIN-SUFFIX", "bingx.com"),
-        ("DOMAIN-SUFFIX", "bitmart.com"),
-        ("DOMAIN-SUFFIX", "bitfinex.com"),
-        ("DOMAIN-SUFFIX", "bitstamp.net"),
-        ("DOMAIN-SUFFIX", "upbit.com"),
-    ),
-}
+# Shadowrocket 独有的业务，PC 版完全没有对应分组，定义在 scripts/extra-rules.json，
+# 和 Karing 脚本共用同一份。对齐 PC 不等于砍掉 PC 没有的东西 —— 只砍 PC 明确判定为误绑的。
 
 # PC 规则集 -> Shadowrocket 侧的处理方式。值同时说明「在哪被覆盖」，不能是 None，
 # 否则等于静默丢弃，所以这里逐条写清楚。出现表里没有的规则集就直接报错。
@@ -268,6 +252,17 @@ def parse_merge_rules(path: Path) -> list[tuple[str, str, str]]:
     return entries
 
 
+def load_extra_rules() -> dict:
+    """读取 PC 没有、手机端自己补充的分组定义。两个生成脚本共用这一份。"""
+    if not EXTRA_RULES_PATH.is_file():
+        raise BuildError(f"缺少 {EXTRA_RULES_PATH.relative_to(REPO_ROOT)}")
+    data = json.loads(EXTRA_RULES_PATH.read_text(encoding="utf-8"))
+    groups = data.get("groups")
+    if not isinstance(groups, dict):
+        raise BuildError(f"{EXTRA_RULES_PATH.name} 里缺少 groups 段")
+    return groups
+
+
 def collect(entries: list[tuple[str, str, str]]) -> dict[str, list[tuple[str, str]]]:
     rules: dict[str, list[tuple[str, str]]] = {}
     for name in OUTPUT_ORDER:
@@ -279,6 +274,8 @@ def collect(entries: list[tuple[str, str, str]]) -> dict[str, list[tuple[str, st
         if rule not in seen[policy]:
             seen[policy].add(rule)
             rules[policy].append(rule)
+
+    effective_extra = load_extra_rules()
 
     for rule_type, value, target in entries:
         if rule_type == "RULE-SET":
@@ -301,10 +298,14 @@ def collect(entries: list[tuple[str, str, str]]) -> dict[str, list[tuple[str, st
         for rule in extra:
             add(TARGET_MAP[pc_target], rule)
 
-    # Shadowrocket 独有
-    for policy, extra in SHADOWROCKET_ONLY.items():
-        for rule in extra:
-            add(policy, rule)
+    # PC 没有的分组，规则来自 scripts/extra-rules.json
+    for extra_key, definition in effective_extra.items():
+        if extra_key not in rules:
+            raise BuildError(f"extra-rules.json 里的 {extra_key!r} 在 OUTPUT_ORDER 里没有对应策略")
+        for rule_type, value in definition["rules"]:
+            if rule_type not in ("DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD"):
+                raise BuildError(f"extra-rules.json 里 {extra_key!r} 出现未处理的类型 {rule_type!r}")
+            add(extra_key, (rule_type, value))
 
     return rules
 
@@ -348,8 +349,31 @@ def summarize(rules: dict[str, list[tuple[str, str]]]) -> str:
     )
 
 
+def parse_args(argv: list[str]) -> tuple[Path, Path]:
+    """返回 (规则源, 输出根目录)。--out-dir 供漂移检测脚本生成到临时目录。"""
+    source = DEFAULT_SOURCE
+    out_dir = REPO_ROOT
+    rest = list(argv[1:])
+    while rest:
+        arg = rest.pop(0)
+        if arg == "--out-dir":
+            if not rest:
+                raise BuildError("--out-dir 后面要跟目录")
+            out_dir = Path(rest.pop(0)).expanduser()
+        elif arg.startswith("--out-dir="):
+            out_dir = Path(arg.split("=", 1)[1]).expanduser()
+        else:
+            source = Path(arg).expanduser()
+    return source, out_dir
+
+
 def main(argv: list[str]) -> int:
-    source = Path(argv[1]).expanduser() if len(argv) > 1 else DEFAULT_SOURCE
+    try:
+        source, out_dir = parse_args(argv)
+    except BuildError as error:
+        print(f"错误: {error}", file=sys.stderr)
+        return 1
+
     if not source.is_file():
         print(f"错误: 找不到规则源 {source}", file=sys.stderr)
         return 1
@@ -362,11 +386,13 @@ def main(argv: list[str]) -> int:
         print(f"错误: {error}", file=sys.stderr)
         return 1
 
-    outputs = (
-        (SHADOWROCKET_DIR / "Shadowrocket.rules.conf", slim),
-        (SHADOWROCKET_DIR / "Shadowrocket.conf", slim),
-        (SHADOWROCKET_DIR / "Shadowrocket.full.conf", full),
-    )
+    contents = {"Shadowrocket.conf": slim, "Shadowrocket.full.conf": full}
+    outputs = []
+    for name in OUTPUT_NAMES:
+        # rules.conf 与 .conf 是同一份内容，.conf 只为兼容旧链接存在
+        content = contents.get(name, slim)
+        outputs.append((out_dir / "shadowrocket" / name, content))
+
     for path, content in outputs:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
@@ -374,7 +400,7 @@ def main(argv: list[str]) -> int:
     print(f"规则源: {source}")
     print(summarize(rules))
     for path, _ in outputs:
-        print(f"已写入: {path.relative_to(REPO_ROOT)}")
+        print(f"已写入: {path}")
     return 0
 
 

@@ -1,6 +1,6 @@
 # Karing 分流规则
 
-当前版本：`v0.3.0`
+当前版本：`v0.3.1`
 
 ## 适合谁
 
@@ -8,6 +8,12 @@
 - 已经有自己的订阅和节点。
 - 主要想让 Claude、ChatGPT、Gemini 这类 AI 服务走更稳定的线路。
 - 能接受在 Karing 里点几步把规则导进去。
+
+## 规则从哪来
+
+由 `scripts/build-karing-rules.py` 从 PC 版 Clash Verge 的 `Merge.yaml` 生成，**不要手改**。和 `shadowrocket/` 用的是同一个规则源、同一套分组顺序。
+
+PC 靠 `RULE-SET` 表达、Karing 有内置规则集可对应的部分，用 `rule_set_build_in` 直接引用（`acl:Claude`、`geosite:google`、`acl:ChinaDomain`、`geosite:geolocation-!cn` 等），比展开成域名更省、也更新。
 
 ## 为什么不给 Clash 格式
 
@@ -43,15 +49,15 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/karing/kari
 
 3. **导入规则**：「分流」→「自定义分流组」→ 右上角 `⋮` →「导入」→ 选刚下载的 JSON。
 
-## 导入后必做两件事
+## 导入后必做
 
 Karing 的「分流规则」页才是真正决定流量去哪的地方，JSON 只提供了分组和域名。
 
 1. **打开「自定义分流组」开关**，并把它排在 `final` 之前。
-2. **逐组设置出站**。JSON 里给的是开箱可用的默认值：
-   - `🤖 Claude` / `🧠 国际 AI` / `🌐 Google` / `🎬 YouTube` / `✈️ Telegram` / `🚀 代理` → 当前选择（`currentSelected`）
+2. **把 `final` 设为直连**。这是兜底，和 PC 版的 `MATCH,DIRECT` 一致：没命中的站点直连，避免国内 `.com` 小站被误送进代理。
+3. **逐组设置出站**。JSON 里给的是开箱可用的默认值：
+   - `🤖 Claude` / `🧠 国际 AI` / `🎬 YouTube` / `🌐 Google` / `💱 交易所` / `✈️ Telegram` / `🇺🇸 美国` / `🇸🇬 新加坡` / `🚀 代理` → 当前选择（`currentSelected`）
    - `🏠 国内直连` → 直连（`direct`）
-3. **把 `final` 设为直连**。这是兜底，和 PC 版的 `MATCH,DIRECT` 一致：没命中的站点直连，避免国内 `.com` 小站被误送进代理。
 4. 首页模式切到「规则」。
 
 ## 地区隔离（Claude 只走美国）
@@ -60,18 +66,14 @@ Karing 的「分流规则」页才是真正决定流量去哪的地方，JSON �
 
 做法：
 
-1. 在 Karing 里建一个「自定义自动选择」组，只放美国节点（例如命名 `US`）。
-2. 回到「分流规则」页，把 `🤖 Claude` 的出站指到这个美国组。
-3. 想更严格的话，`🧠 国际 AI` 也指到同一个组。
+1. 建两个「自定义自动选择」组，一个只放美国节点、一个只放新加坡节点。
+2. 回到「分流规则」页，逐组改出站：
+   - `🤖 Claude` → 美国组（想更严格的话 `🧠 国际 AI` 也指过去）
+   - `🇺🇸 美国` → 美国组
+   - `🇸🇬 新加坡` → 新加坡组
+   - `💱 交易所` → 台湾或新加坡组
 
-PC 版里有几条按地区写死的规则，在 Karing 上统一落进了 `🚀 代理`，需要区别对待时手动挪：
-
-| 域名 | PC 版目标 | 建议 |
-|---|---|---|
-| `mail.com` | 美国 | 挪到你的美国组 |
-| `lexmount.com` | 美国 | 挪到你的美国组 |
-| `muse.meta.com` / `muse.ai` | 美国 | 挪到你的美国组 |
-| `dola.com` | 新加坡 | 挪到你的新加坡组 |
+PC 版里按地区写死的域名现在都有了独立分组，不用再从别处挪。
 
 ## 分组说明
 
@@ -79,11 +81,22 @@ PC 版里有几条按地区写死的规则，在 Karing 上统一落进了 `🚀
 |---|---|---|
 | `🤖 Claude` | 当前选择 | Claude / Anthropic 全部域名，含 MCP、ghost、b-cdn、Cloudflare 边缘 |
 | `🧠 国际 AI` | 当前选择 | OpenAI、Gemini、Perplexity、Cursor、Copilot、HuggingFace、Midjourney 等 |
-| `🌐 Google` | 当前选择 | Google 登录、Gmail、OAuth、支付 |
 | `🎬 YouTube` | 当前选择 | YouTube / googlevideo / ytimg |
+| `🌐 Google` | 当前选择 | Google 登录、Gmail、OAuth、支付 |
+| `💱 交易所` | 当前选择 | OKX、Bybit、Binance、Coinbase 等 26 条 |
 | `✈️ Telegram` | 当前选择 | Telegram 域名与官方 IP 段 |
+| `🇺🇸 美国` | 当前选择 | 区域锁美国：`mail.com`、`lexmount.com`、`muse.meta.com`、`muse.ai` |
+| `🇸🇬 新加坡` | 当前选择 | 区域锁新加坡：`dola.com` |
 | `🏠 国内直连` | 直连 | 国内 AI 服务、钉钉、腾讯系直连，以及国内域名 / IP |
 | `🚀 代理` | 当前选择 | 其余明确要走代理的海外站点 |
+
+## 顺序不能乱
+
+规则在「分流规则」页里**从上到下**匹配，先命中先生效。两条硬要求：
+
+**1. `🎬 YouTube` 必须排在 `🌐 Google` 前面。** 否则 `youtubei.googleapis.com` 会被 `googleapis.com` 抢走，永远进不了 YouTube 组。
+
+**2. 所有精确分组必须排在 `🏠 国内直连` 和 `🚀 代理` 前面。** PC 版里有 `tgalileo.com` 这种「在 cn 域名库里、但要走代理」的域名，靠精确规则前置才能改走代理。国内直连一旦提前就会把它判成直连，和 PC 的意图正好相反。
 
 ## 和 PC 版（Clash Verge）的差异
 
@@ -91,11 +104,15 @@ PC 版里有几条按地区写死的规则，在 Karing 上统一落进了 `🚀
 
 | PC 版 | Karing 上怎么处理 |
 |---|---|
-| `RULE-SET,apple / icloud,DIRECT` | 不建组，兜底就是直连 |
-| `RULE-SET,tld-proxy,Proxies` | 不搬。兜底是直连，照搬会把大量国内 `.com` 误送进代理 |
-| `PROCESS-NAME-REGEX` 进程级规则（钉钉、Muse） | Karing 的自定义分流组虽然支持进程名，但只在 PC 生效，且名字要装完才知道，所以不预置 |
+| `RULE-SET,google` | `geosite:google` |
+| `RULE-SET,cn-domain` | `acl:ChinaDomain` |
+| `RULE-SET,cn-ip` / `private-ip` | `acl:ChinaIp` |
+| `RULE-SET,global-domain` / `tld-proxy` | `geosite:geolocation-!cn` |
+| `RULE-SET,telegramcidr` | `geoip:telegram` |
+| `RULE-SET,apple` / `icloud` | 不建组，兜底就是直连 |
+| `PROCESS-NAME-REGEX` 进程级规则（钉钉、Muse） | 自定义分流组虽然支持进程名，但只在 PC 生效、名字要装完才知道，不预置 |
 | `RULE-SET,applications,DIRECT` | 同上，属于按本机应用配置的事 |
-| 交易所分组 | PC 版本身没有交易所规则，这里保持对齐；需要的话自己加组 |
+| 交易所分组 | **手机端独有**，PC 版没有这块业务 |
 
 ## 60 秒检查
 
@@ -105,10 +122,9 @@ PC 版里有几条按地区写死的规则，在 Karing 上统一落进了 `🚀
 | ChatGPT | `chatgpt.com` | 能打开并正常对话 | `🧠 国际 AI` 出站 |
 | Gemini | `gemini.google.com` | 能打开 Gemini | 上一条；再确认 `🧠 国际 AI` 排在 `🌐 Google` 前面 |
 | Google | `google.com` 或 Gmail | 能搜索、能进邮箱 | `🌐 Google` 出站 |
-| YouTube | `youtube.com` | 视频能播放 | `🎬 YouTube` 出站 |
+| YouTube | `youtube.com` | 视频能播放 | `🎬 YouTube` 出站，且排在 Google 之前 |
+| 交易所 | OKX / Bybit / Binance | 页面能打开 | `💱 交易所` 出站 |
 | 国内网站 | 百度、淘宝、腾讯系 | 打开正常 | 确认 `final` 是直连、模式是「规则」 |
-
-规则在「分流规则」页里**从上到下**匹配，先命中先生效。所以 `🤖 Claude` 和 `🧠 国际 AI` 必须排在 `🌐 Google` 前面，否则 Gemini 会被 Google 组提前接走。
 
 ## 一句话给小白
 
@@ -118,4 +134,4 @@ PC 版里有几条按地区写死的规则，在 Karing 上统一落进了 `🚀
 
 - 这份 JSON **不含任何节点、订阅、账号**，只有分组和域名规则，可以安全公开。
 - 导入规则之前，必须先导入自己的订阅。
-- 规则由 `scripts/build-karing-rules.py` 从 PC 版 `Merge.yaml` 生成，不要手改 JSON —— 改了会盖掉。
+- 规则由脚本从 PC 版 `Merge.yaml` 生成，不要手改 JSON —— 改了会盖掉。改完 PC 配置后跑 `bash scripts/check-drift.sh --fix` 重新生成。
