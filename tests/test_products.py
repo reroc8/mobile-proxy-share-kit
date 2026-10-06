@@ -380,7 +380,15 @@ class TestDocumentLinks(unittest.TestCase):
     读者点开才发现 404。所以把文档当代码一样测。
     """
 
-    DOCUMENTS = ("README.md", "karing/README.md", "shadowrocket/README.md", "docs/index.html")
+    DOCUMENTS = (
+        "README.md",
+        "karing/README.md",
+        "shadowrocket/README.md",
+        "docs/index.html",
+        "docs/import.html",
+    )
+
+    HTML_PAGES = ("docs/index.html", "docs/import.html")
 
     def read(self, relative: str) -> str:
         return (REPO_ROOT / relative).read_text(encoding="utf-8")
@@ -398,20 +406,24 @@ class TestDocumentLinks(unittest.TestCase):
                 checked += 1
         self.assertGreater(checked, 0, "一个 raw 链接都没找到，检查是不是正则失效了")
 
-    def test_landing_page_local_links_resolve(self) -> None:
-        html = self.read("docs/index.html")
-        targets = [
-            target
-            for target in re.findall(r'href="([^"#:][^"]*)"', html)
-            + re.findall(r'src="([^"]+)"', html)
-            if "://" not in target  # 外链交给 test_raw_* / test_pages_* 两类覆盖
-        ]
-        self.assertGreater(len(targets), 0, "落地页里一个本地引用都没找到")
-        for target in targets:
-            self.assertTrue(
-                (REPO_ROOT / "docs" / target).is_file(),
-                f"落地页引用 {target}，但 docs/{target} 不存在",
-            )
+    def test_page_local_links_resolve(self) -> None:
+        checked = 0
+        for relative in self.HTML_PAGES:
+            html = self.read(relative)
+            targets = [
+                target
+                for target in re.findall(r'href="([^"#:][^"]*)"', html)
+                + re.findall(r'src="([^"]+)"', html)
+                if "://" not in target  # 外链与自定义 scheme 各自另有断言
+            ]
+            self.assertGreater(len(targets), 0, f"{relative} 里一个本地引用都没找到")
+            for target in targets:
+                self.assertTrue(
+                    (REPO_ROOT / "docs" / target).is_file(),
+                    f"{relative} 引用 {target}，但 docs/{target} 不存在",
+                )
+                checked += 1
+        self.assertGreater(checked, 0)
 
     def test_pages_links_resolve_under_docs(self) -> None:
         """GitHub Pages 的源是 docs/，所以站点路径对应 docs/ 下的文件。"""
@@ -430,18 +442,25 @@ class TestDocumentLinks(unittest.TestCase):
 
 
     def test_shadowrocket_one_tap_link_present(self) -> None:
-        """落地页要保留小火箭的一键导入入口，且指向完整骨架模板。
+        """两个页面都要保留小火箭的一键导入入口，且指向完整骨架模板。
 
         Shadowrocket 的 scheme 由社区维护的官方群组关键词文件给出：
         `shadowrocket://config/add/{url}` = 安装/使用配置。
         """
-        html = self.read("docs/index.html")
-        match = re.search(r'href="shadowrocket://config/add/([^"]+)"', html)
-        self.assertIsNotNone(match, "落地页里没有小火箭一键导入按钮")
-        self.assertTrue(
-            match.group(1).endswith("shadowrocket/Shadowrocket.full.conf"),
-            f"一键导入应指向完整骨架模板，实际是 {match.group(1)}",
-        )
+        for relative in self.HTML_PAGES:
+            html = self.read(relative)
+            match = re.search(r'href="shadowrocket://config/add/([^"]+)"', html)
+            self.assertIsNotNone(match, f"{relative} 里没有小火箭一键导入按钮")
+            self.assertTrue(
+                match.group(1).endswith("shadowrocket/Shadowrocket.full.conf"),
+                f"{relative} 的一键导入应指向完整骨架模板，实际是 {match.group(1)}",
+            )
+
+    def test_phone_import_page_offers_both_clients(self) -> None:
+        """手机操作页要同时给两个客户端入口 —— 扫码的人不一定用小火箭。"""
+        html = self.read("docs/import.html")
+        self.assertIn("shadowrocket://config/add/", html)
+        self.assertIn('href="karing/karing-diversion-rules.json"', html)
 
 
 if __name__ == "__main__":

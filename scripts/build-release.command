@@ -81,6 +81,7 @@ cp "$ROOT_DIR/scripts/check-drift.sh" "$TMP_DIR/scripts/check-drift.sh"
 mkdir -p "$TMP_DIR/tests"
 cp "$ROOT_DIR/tests/"*.py "$TMP_DIR/tests/"
 cp "$ROOT_DIR/docs/index.html" "$TMP_DIR/docs/index.html"
+cp "$ROOT_DIR/docs/import.html" "$TMP_DIR/docs/import.html"
 cp "$ROOT_DIR/docs/assets/entry-qr.png" "$TMP_DIR/docs/assets/entry-qr.png"
 cp "$ROOT_DIR/docs/karing/"*.json "$TMP_DIR/docs/karing/"
 

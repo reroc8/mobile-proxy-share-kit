@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>导入代理规则</title>
+  <meta name="description" content="在手机上一步导入 Karing 分流规则或 Shadowrocket 配置，不含任何节点。">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1d2430;
+      --muted: #5f6b7a;
+      --line: #d8dee8;
+      --accent: #1264d8;
+      --on-accent: #ffffff;
+      --accent-soft: #e7f0ff;
+      --warn: #8a4b00;
+      --warn-bg: #fff4de;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101318;
+        --panel: #181d24;
+        --text: #edf1f7;
+        --muted: #a9b2c0;
+        --line: #2b3340;
+        --accent: #7db1ff;
+        --on-accent: #0b1220;
+        --accent-soft: #17263d;
+        --warn: #ffd38a;
+        --warn-bg: #2d2414;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(560px, 100%);
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0 0 6px;
+    }
+
+    h2 {
+      font-size: 17px;
+      margin: 0 0 6px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    .lead,
+    .muted {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    ol {
+      padding-left: 20px;
+      margin: 8px 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code {
+      background: var(--accent-soft);
+      border-radius: 5px;
+      padding: 2px 5px;
+      word-break: break-all;
+    }
+
+    .button {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      color: var(--on-accent);
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 14px;
+      font-weight: 700;
+      font-size: 17px;
+      margin: 12px 0 4px;
+    }
+
+    details {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .warn {
+      color: var(--warn);
+      background: var(--warn-bg);
+      border-color: rgba(138, 75, 0, 0.25);
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>导入代理规则</h1>
+    <p class="lead">按你手机上的客户端选一个。两份规则都不含节点，导入后还要接上你自己的订阅。</p>
+
+    <section>
+      <h2>Shadowrocket 小火箭</h2>
+      <p class="muted">点下面的按钮会跳到 Shadowrocket，自动下载并启用配置。</p>
+      <a class="button" href="shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf">一键导入</a>
+      <details>
+        <summary>点了没反应？</summary>
+        <p>这个按钮只在 iPhone / iPad 的 <strong>Safari</strong> 里有效。在电脑上、或微信等自带浏览器里点不会有反应，走手动四步：</p>
+        <ol>
+          <li>复制这个地址：<code>https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf</code></li>
+          <li>打开 Shadowrocket →「配置」→ 右上角 <code>+</code> → 粘贴 → 下载</li>
+          <li>在「远程文件」里点它 →「使用配置」</li>
+          <li>回首页，把「全局路由」改成「配置」</li>
+        </ol>
+      </details>
+    </section>
+
+    <section>
+      <h2>Karing</h2>
+      <p class="muted">Karing 没有一键导入的接口，需要下载文件后在 App 里导入。</p>
+      <a class="button" href="karing/karing-diversion-rules.json" download="karing-diversion-rules.json">下载分流规则 JSON</a>
+      <details>
+        <summary>下载完怎么导入？</summary>
+        <ol>
+          <li>Karing →「分流」→「自定义分流组」→ 右上角 <code>⋮</code> →「导入」</li>
+          <li>选刚下载的那个 JSON</li>
+          <li>去「分流规则」页，打开「自定义分流组」开关，并把它排在 <code>final</code> 之前</li>
+          <li>把 <code>final</code> 的出站设为<strong>直连</strong></li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="warn">
+      <h2>导入后必做</h2>
+      <p>两份规则分组一样。导入后要到策略里把自己的节点放进去，否则不会走代理：</p>
+      <ul>
+        <li><code>Claude</code>：只放美国节点。</li>
+        <li><code>AI</code>：美国节点优先，台湾备用。</li>
+        <li><code>Exchange</code>：台湾、新加坡节点。</li>
+      </ul>
+      <p>Karing 那边是「分流规则」页逐组改出站，把 <code>Claude</code> 指向你自己建的美国组即可。</p>
+    </section>
+
+    <section>
+      <p class="muted">完整说明、分组表、60 秒检查清单：<a href="index.html">回到入口页</a>。</p>
+    </section>
+  </main>
+</body>
+</html>

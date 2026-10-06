@@ -15,6 +15,8 @@
 
 用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核、免费、全平台，规则也能和 PC 版共用同一套逻辑，省一份维护成本。
 
+手机入口页：<https://reroc8.github.io/mobile-proxy-share-kit/> —— 页面上有二维码，手机扫完会打开一个**只有两个按钮**的精简页（小火箭一键导入 / Karing 下载 JSON），不用在长页面里翻找。
+
 ## 核心目标
 
 唯一核心目标：**AI 风控稳定**。
