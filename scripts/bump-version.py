@@ -43,8 +43,11 @@ TARGETS = (
 
 # 参与「规则内容」指纹的产物。归一化时去掉注释和空行 ——
 # .conf 头部的 `# Source:` 行会随 PC 发版变化，但那不是规则内容变了。
+# 用 full.conf 而不是 rules.conf —— 后者**不含 [Proxy Group] 段**，
+# 于是"只改了策略组（比如地区正则）"这种变化会被指纹漏掉，护栏就会放过一个真改动。
+# 这个盲区实际踩到过：修 SG 组误收节点的版本被误判成"与上一版完全相同"。
 ARTIFACTS = (
-    ("shadowrocket/Shadowrocket.rules.conf", "conf"),
+    ("shadowrocket/Shadowrocket.full.conf", "conf"),
     ("karing/karing-diversion-rules.json", "json"),
     ("clash/clash-override.yaml", "conf"),
 )
