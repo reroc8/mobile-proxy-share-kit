@@ -111,6 +111,27 @@
       margin: 12px 0 4px;
     }
 
+    .qr-wrap {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .qr-wrap .qr {
+      width: 132px;
+      height: 132px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    @media (max-width: 420px) {
+      .qr-wrap {
+        flex-direction: column;
+      }
+    }
+
     details {
       margin-top: 10px;
       font-size: 14px;
@@ -136,8 +157,14 @@
 
     <section>
       <h2>Shadowrocket 小火箭</h2>
-      <p class="muted">点下面的按钮会跳到 Shadowrocket，自动下载并启用配置。</p>
+      <p class="muted">用下面的按钮，或者把这一页给另一台设备、用 Shadowrocket 扫下面这张码 —— 两种都能直接导入。</p>
       <a class="button" href="shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf">一键导入</a>
+      <div class="qr-wrap" style="margin-top:12px">
+        <img class="qr" alt="Shadowrocket 配置导入二维码" src="assets/shadowrocket-config-qr.png">
+        <div>
+          <p class="muted">用小火箭自带的扫码扫这张码。这一页要分享给别人时，把链接发过去即可 —— 对方在小火箭里扫上面这张码也能直接导入。</p>
+        </div>
+      </div>
       <details>
         <summary>点了没反应？</summary>
         <p>这个按钮只在 iPhone / iPad 的 <strong>Safari</strong> 里有效。在电脑上、或微信等自带浏览器里点不会有反应，走手动四步：</p>
