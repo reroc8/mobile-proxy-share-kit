@@ -390,24 +390,28 @@
         <li>回首页，把「全局路由」改成「配置」。</li>
       </ol>
 
-      <h3>节点怎么放</h3>
+      <h3>策略组</h3>
+      <p>前三个地区组会按节点名里的地区字样 <strong>自动收节点</strong>，你不用手动往里拖。业务组都已经指好了默认出口，导入就能用。</p>
       <table>
         <thead>
           <tr>
-            <th>策略名</th>
-            <th>建议放入的节点</th>
+            <th>策略组</th>
+            <th>默认走哪</th>
+            <th>放什么</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td><code>Claude</code></td><td>只放美国节点。</td></tr>
-          <tr><td><code>AI</code></td><td>美国节点优先，台湾节点备用。</td></tr>
-          <tr><td><code>Exchange</code></td><td>台湾、新加坡节点。</td></tr>
-          <tr><td><code>US</code></td><td>只放美国节点（<code>mail.com</code>、<code>lexmount.com</code>、<code>muse</code> 系）。</td></tr>
-          <tr><td><code>SG</code></td><td>只放新加坡节点（<code>dola.com</code>）。</td></tr>
-          <tr><td><code>Google</code></td><td>Google / Gmail 稳定的节点。</td></tr>
-          <tr><td><code>YouTube</code></td><td>看视频稳定的节点。</td></tr>
-          <tr><td><code>Telegram</code></td><td>常用稳定节点。</td></tr>
-          <tr><td><code>Proxy</code></td><td>普通代理节点。</td></tr>
+          <tr><td><code>Claude</code></td><td><code>US</code></td><td>Claude / Anthropic 全部域名</td></tr>
+          <tr><td><code>AI</code></td><td><code>US</code></td><td>OpenAI、Gemini、Perplexity、Cursor 等</td></tr>
+          <tr><td><code>YouTube</code></td><td><code>Proxy</code></td><td>YouTube / googlevideo / ytimg</td></tr>
+          <tr><td><code>Google</code></td><td><code>Proxy</code></td><td>Google 登录、Gmail、OAuth</td></tr>
+          <tr><td><code>Exchange</code></td><td><code>SG</code></td><td>交易所（OKX、Bybit、Binance 等）</td></tr>
+          <tr><td><code>Telegram</code></td><td><code>Proxy</code></td><td>Telegram 域名与 IP 段</td></tr>
+          <tr><td><code>Banks</code></td><td>直连</td><td>香港银行（汇丰、渣打等）</td></tr>
+          <tr><td><code>Brokers</code></td><td><code>HK</code></td><td>券商 / 港美股</td></tr>
+          <tr><td><code>US</code> / <code>SG</code> / <code>HK</code></td><td>自动</td><td>按节点名里的「美国 / US / 洛杉矶」「新加坡 / 狮城」「香港 / 深港」等字样自动归类</td></tr>
+          <tr><td><code>CN</code></td><td>直连</td><td>国内流量。默认直连，判错可一键切走</td></tr>
+          <tr><td><code>Proxy</code></td><td><code>PROXY</code></td><td>通用出口，未命中规则的全部走它</td></tr>
         </tbody>
       </table>
     </section>

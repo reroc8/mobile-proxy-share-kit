@@ -176,7 +176,7 @@
           <li>把刚才打开的内容整段复制。</li>
           <li>ClashMetaForAndroid：设置 → 覆写 → 粘贴 → 保存 → 重新加载配置。<br>
               FlClash：配置 → 对应订阅 → 覆写 → 粘贴。</li>
-          <li>到策略组确认 <code>Claude</code> 指向 <code>US</code>，全局模式选「规则」。</li>
+          <li>确认 <code>Claude</code> 指向 <code>US</code>、<code>Brokers</code> 指向 <code>HK</code>，全局模式选「规则」。</li>
         </ol>
       </details>
     </section>
@@ -185,9 +185,9 @@
       <h2>导入后必做</h2>
       <p>两份规则分组一样。导入后要到策略里把自己的节点放进去，否则不会走代理：</p>
       <ul>
-        <li><code>Claude</code>：只放美国节点。</li>
-        <li><code>AI</code>：美国节点优先，台湾备用。</li>
-        <li><code>Exchange</code>：台湾、新加坡节点。</li>
+        <li><code>US</code> / <code>SG</code> / <code>HK</code> 三个地区组会按节点名里的地区字样<strong>自动收节点</strong>，不用手动拖。</li>
+        <li><code>Claude</code> 默认走 <code>US</code>，<code>AI</code> 默认走 <code>US</code>，<code>Exchange</code> 默认走 <code>SG</code>，<code>Banks</code> 默认直连，<code>Brokers</code> 默认走 <code>HK</code>。</li>
+        <li>想换出口：进对应策略组点一下就行，不用改规则。</li>
       </ul>
       <p>Karing 那边是「分流规则」页逐组改出站，把 <code>Claude</code> 指向你自己建的美国组即可。</p>
     </section>
