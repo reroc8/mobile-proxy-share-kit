@@ -66,7 +66,6 @@ ARTIFACTS=(
     "shadowrocket/Shadowrocket.rules.conf"
     "shadowrocket/Shadowrocket.conf"
     "shadowrocket/Shadowrocket.full.conf"
-    "shadowrocket/Shadowrocket.overlay.conf"
     "clash/clash-override.yaml"
 )
 

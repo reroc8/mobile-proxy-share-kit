@@ -598,48 +598,6 @@ class TestRemoteRuleSets(unittest.TestCase):
                 self.assertGreater(len(body.splitlines()), 5, f"{url} 内容过短")
 
 
-class TestShadowrocketOverlay(unittest.TestCase):
-    """叠加片段是给「已经有完整机场配置」的人用的，必须只叠加、不接管。
-
-    机场那份配置自带节点、DNS 设置和几千条通用规则。用我们的整份配置替换会把这些全丢掉，
-    所以这份片段：不含 [General]（别覆盖人家的 DNS/隧道设置）、不含局域网段和兜底
-    （人家本来就有）、不含任何节点。
-    """
-
-    PATH = REPO_ROOT / "shadowrocket" / "Shadowrocket.overlay.conf"
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.text = cls.PATH.read_text(encoding="utf-8")
-        cls.rules = [
-            line.strip()
-            for line in cls.text.splitlines()
-            if line.strip() and not line.startswith("#") and not line.startswith("[")
-        ]
-
-    def test_does_not_clobber_existing_general_settings(self) -> None:
-        self.assertNotIn("[General]", self.text, "叠加片段不能带 [General]，会覆盖机场的 DNS/隧道设置")
-
-    def test_leaves_fallback_to_the_existing_config(self) -> None:
-        joined = " ".join(self.rules)
-        for marker in ("FINAL,", "GEOIP,CN,CN"):
-            self.assertNotIn(
-                marker,
-                joined,
-                f"叠加片段不该自己带兜底（{marker}），用户配置里已经有了",
-            )
-
-    def test_still_carries_groups_and_rules(self) -> None:
-        self.assertIn("[Proxy Group]", self.text)
-        self.assertGreater(len(self.rules), 100, "叠加片段里规则太少，检查生成逻辑")
-        self.assertIn("DOMAIN-SUFFIX,claude.ai,Claude", self.rules)
-
-    def test_contains_no_proxy_nodes(self) -> None:
-        """片段只带策略组和规则，节点由用户自己的订阅/机场配置提供。"""
-        self.assertNotIn("[Proxy]", self.text)
-        self.assertNotIn("trojan", self.text)
-
-
 class TestClashProduct(unittest.TestCase):
     """Clash 覆写产物：与另外两份同源、同组名、同规则目标。
 

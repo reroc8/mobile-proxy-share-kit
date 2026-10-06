@@ -3,7 +3,7 @@
 #
 # 用法：ClashMetaForAndroid / FlClash →「覆写 / Override」→ 粘贴这个文件的内容或地址。
 # 它不含节点：节点由你自己的订阅提供，地区组会按节点名自动归类。
-# Source: reroc8/clash-verge-share-kit v0.3.34
+# Source: reroc8/clash-verge-share-kit v0.3.35
 
 proxy-groups:
   - name: Claude
