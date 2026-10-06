@@ -1,42 +1,39 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.2.1`，只维护两份产物。
+面向手机端的代理分流规则包。当前 `v0.2.2`，维护三份同源产物。
 
-两份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组结构、组顺序、规则条数都一致，不会各走各的。
+三份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组名与顺序一致，不会各走各的。
 
 这个项目只提供规则和说明，**不包含任何订阅、节点、账号、密码或 token**。使用者必须先在客户端里导入自己的订阅。
 
-## 两份产物
+## 三份产物
 
 | 产物 | 覆盖 | 分组数 |
 |---|---|---|
 | [`karing/`](karing/) | Karing（iOS / Android / Windows / macOS） | 10 |
 | [`shadowrocket/`](shadowrocket/) | Shadowrocket（iOS） | 10 |
+| [`clash/`](clash/) | ClashMetaForAndroid / FlClash / Stash（mihomo 内核） | 10 |
 
-用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核、免费、全平台，规则也能和 PC 版共用同一套逻辑，省一份维护成本。
+三份同源：同一套域名、同一套分组名。区别只在格式和加载方式 ——
+Karing 用它的自定义分流组 JSON，小火箭用 Surge 风格 `.conf`，Clash 系直接用覆写。
 
-### 为什么其他客户端用不了这两份产物
+用 Hiddify / sing-box 官方客户端的暂时没有产物（要的是 sing-box JSON），
+可以先改用上面任何一个。
 
-不是扫码不扫码的问题 —— 是**格式不对**。各家都接受 `xxx://install-config?url=…` 这类导入链接，
-但那是拿来导入**自家格式的完整配置**的：
+### 各家客户端吃什么格式
 
-| 客户端 | 接受的 scheme（查自各项目源码） | 吃什么格式 | 能用这里的产物吗 |
+| 客户端 | 接受的 scheme（查自各项目源码） | 吃什么格式 | 本仓库的产物 |
 |---|---|---|---|
-| Shadowrocket | `shadowrocket://` | Surge 风格 `.conf` | ✅ 就是给它做的 |
-| Karing | `karing://` / `clash://` | 订阅配置 + 它自己的分流组 JSON | ✅ 就是给它做的 |
-| ClashMetaForAndroid | `clash://`、`clashmeta://` | Clash YAML | ❌ 没做 Clash 产物 |
-| FlClash | `clash://`、`clashmeta://`、`flclash://` | Clash YAML | ❌ 没做 |
-| Stash | Clash 系 | Clash YAML | ❌ 没做 |
-| Hiddify | `hiddify://`、`sing-box://`、`clash://` 等 | sing-box JSON / Clash YAML | ❌ 没做 |
+| Shadowrocket | `shadowrocket://config/add/{url}` | Surge 风格 `.conf` | `shadowrocket/` |
+| Karing | `karing://install-config` 等 | 订阅配置 + 它自己的分流组 JSON | `karing/` |
+| ClashMetaForAndroid | `clash://`、`clashmeta://` | Clash YAML | `clash/`（当覆写用） |
+| FlClash | `clash://`、`clashmeta://`、`flclash://` | Clash YAML / 覆写脚本 | `clash/`（当覆写用） |
+| Stash | Clash 系 | Clash YAML | `clash/`（当覆写用） |
+| Hiddify | `hiddify://`、`sing-box://`、`clash://` 等 | sing-box JSON / Clash YAML | 暂无 |
 
-`karing/karing-diversion-rules.json` 是 Karing 私有的分流组格式，只有 Karing 认；
-`shadowrocket/*.conf` 是 Surge 风格语法，只有 Shadowrocket 这类客户端认。两者都不能当作
-Clash YAML 或 sing-box JSON 喂给别的客户端。
-
-**如果以后要给 Clash 系做**：成本不高 —— PC 版仓库的 `Merge.yaml` 本身就是 Clash 格式
-（`rule-providers` + `rules`），差的是 `proxies` / `proxy-groups`，而手机端 Clash 的
-「覆写 / Override」功能正好只需要这一段。但那是另一个客户端维护成本，目前按「只维护两份产物」
-的约定没做。
+注意各家的 `xxx://install-config?url=` 都是拿来导入**自家格式的完整配置**的，
+而这里的产物是**规则**（不含节点），所以 Clash 系那份是配 「覆写 / Override」用的，
+不是用 scheme 直接导入的。
 
 手机入口页：<https://reroc8.github.io/mobile-proxy-share-kit/> —— 页面上有二维码，手机扫完会打开一个**只有两个按钮**的精简页（小火箭一键导入 / Karing 下载 JSON），不用在长页面里翻找。
 
@@ -127,6 +124,10 @@ karing/
   karing-diversion-rules.json   Karing 自定义分流组（产物，勿手改）
   README.md
 
+clash/
+  clash-override.yaml           Clash 覆写（产物，勿手改）
+  README.md
+
 shadowrocket/
   Shadowrocket.conf             旧链接兼容，内容同 rules.conf
   Shadowrocket.full.conf        完整骨架模板（多一段 [Proxy Group]）
@@ -137,6 +138,7 @@ scripts/
   mobile_rules.py                   两个生成脚本的公共部分（取规则源、解析、映射检查）
   build-karing-rules.py             规则源 -> Karing JSON
   build-shadowrocket-rules.py       规则源 -> Shadowrocket .conf
+  build-clash-rules.py              规则源 -> Clash 覆写
   extra-rules.json                  PC 没有、手机端补充的分组（两个脚本共用）
   check-drift.sh                    检测产物是否落后于 PC 版源码
   check-sensitive.sh
@@ -189,6 +191,7 @@ https://raw.githubusercontent.com/reroc8/clash-verge-share-kit/main/config/Merge
 ```bash
 python3 scripts/build-karing-rules.py        [规则源] [--out-dir 目录]
 python3 scripts/build-shadowrocket-rules.py  [规则源] [--out-dir 目录]
+python3 scripts/build-clash-rules.py         [规则源] [--out-dir 目录]
 ```
 
 不传规则源就走上面的 GitHub 地址。**离线或想用本机那份配置时，传路径即可**：
@@ -215,7 +218,7 @@ python3 scripts/build-karing-rules.py ~/Desktop/Clash配置/clash-verge-share-ki
 
 1. **脚本生成** —— 产物不再是手写的，改 PC 配置后重新生成即可，不会再出现「改了一边忘了另一边」。
 
-2. **漂移检测** —— `bash scripts/check-drift.sh` 会把产物重新生成到临时目录和仓库里的对比，
+2. **漂移检测** —— `bash scripts/check-drift.sh` 会把**三份**产物重新生成到临时目录和仓库里的对比，
    不一致就报错并打印 diff；`--fix` 直接重新生成。
 
    ```bash

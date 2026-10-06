@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """把仓库里所有位置的项目版本号统一改到指定版本。
 
-**版本号的语义：它只表示「规则内容」的版本。**
+**版本号的语义：它表示「用户拿到的产物」的版本。**
 
-规则内容 = 域名、分组、顺序。改了这些才发新版本。
+产物内容 = 域名、分组、顺序，以及**覆盖的客户端范围**。改了这些才发新版本。
 测试、CI、脚本、文档这类工程改动走普通提交，不占版本号 —— 之前没这条规矩，
 连续发了 v0.3.2 / v0.3.3 / v0.3.4 / v0.3.5 四个产物内容零变化的版本，
 版本号看着在涨，其实什么都没变。
@@ -38,6 +38,7 @@ TARGETS = (
     (Path("README.md"), re.compile(r"(当前 )`v\d+\.\d+\.\d+`"), r"\g<1>`{new}`"),
     (Path("karing/README.md"), re.compile(r"(当前版本：)`v\d+\.\d+\.\d+`"), r"\g<1>`{new}`"),
     (Path("shadowrocket/README.md"), re.compile(r"(当前版本：)`v\d+\.\d+\.\d+`"), r"\g<1>`{new}`"),
+    (Path("clash/README.md"), re.compile(r"(当前版本：)`v\d+\.\d+\.\d+`"), r"\g<1>`{new}`"),
 )
 
 # 参与「规则内容」指纹的产物。归一化时去掉注释和空行 ——
@@ -45,6 +46,7 @@ TARGETS = (
 ARTIFACTS = (
     ("shadowrocket/Shadowrocket.rules.conf", "conf"),
     ("karing/karing-diversion-rules.json", "json"),
+    ("clash/clash-override.yaml", "conf"),
 )
 
 
@@ -57,14 +59,17 @@ def normalize(text: str, kind: str) -> str:
     return json.dumps(document, ensure_ascii=False, sort_keys=True)
 
 
-def fingerprint(read: "callable") -> str | None:
-    """read(relative_path) -> 文本或 None。取不到就返回 None。"""
+def fingerprint(read: "callable") -> str:
+    """read(relative_path) -> 文本或 None。
+
+    「取不到」也要编进哈希：某个版本还没有这份产物，本身就是与有它的版本之间的差别。
+    早先的做法是取不到就返回 None 跳过检查，那会让「新增产物」这种变化被漏掉。
+    """
     parts = []
     for relative, kind in ARTIFACTS:
         text = read(relative)
-        if text is None:
-            return None
-        parts.append(normalize(text, kind))
+        marker = "MISSING" if text is None else normalize(text, kind)
+        parts.append(f"{relative}:{marker}")
     return hashlib.sha256("\0".join(parts).encode("utf-8")).hexdigest()
 
 
@@ -129,11 +134,11 @@ def main(argv: list[str]) -> int:
         else:
             before = fingerprint(lambda rel: read_git(old_version, rel))
             after = fingerprint(read_worktree)
-            if before is not None and before == after:
+            if before == after:
                 print(
-                    f"错误: 规则内容与 {old_version} 完全相同，不该发新版本。\n"
-                    "版本号只表示规则（域名/分组/顺序）的版本，测试、CI、脚本、文档之类的\n"
-                    "工程改动走普通提交即可。确实需要发就用 --force。",
+                    f"错误: 产物内容与 {old_version} 完全相同，不该发新版本。\n"
+                    "版本号只表示产物（域名/分组/顺序/覆盖的客户端）的版本，\n"
+                    "测试、CI、脚本、文档之类的工程改动走普通提交即可。确实需要发就用 --force。",
                     file=sys.stderr,
                 )
                 return 1

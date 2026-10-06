@@ -29,6 +29,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 安装测试依赖
+        run: pip install pyyaml
+
       - name: 产物约束检查
         run: python3 -m unittest discover -s tests -v
 

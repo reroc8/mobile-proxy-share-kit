@@ -21,7 +21,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 RULES_SOURCE="${RULES_SOURCE:-}"
 
-for script in mobile_rules.py build-karing-rules.py build-shadowrocket-rules.py; do
+for script in mobile_rules.py build-karing-rules.py build-shadowrocket-rules.py build-clash-rules.py; do
     if [ ! -f "$ROOT_DIR/scripts/$script" ]; then
         echo "错误: 缺少 scripts/$script"
         exit 1
@@ -53,6 +53,7 @@ if [ "$FIX" -eq 1 ]; then
     echo "== 用 PC 版规则源重新生成产物 =="
     run_builder build-karing-rules.py
     run_builder build-shadowrocket-rules.py
+    run_builder build-clash-rules.py
     echo
 fi
 
@@ -65,6 +66,7 @@ ARTIFACTS=(
     "shadowrocket/Shadowrocket.rules.conf"
     "shadowrocket/Shadowrocket.conf"
     "shadowrocket/Shadowrocket.full.conf"
+    "clash/clash-override.yaml"
 )
 
 if ! run_builder build-karing-rules.py --out-dir "$TMP_DIR" >/dev/null; then
@@ -73,6 +75,10 @@ if ! run_builder build-karing-rules.py --out-dir "$TMP_DIR" >/dev/null; then
 fi
 if ! run_builder build-shadowrocket-rules.py --out-dir "$TMP_DIR" >/dev/null; then
     echo "错误: Shadowrocket 产物生成失败，先解决上面的报错"
+    exit 1
+fi
+if ! run_builder build-clash-rules.py --out-dir "$TMP_DIR" >/dev/null; then
+    echo "错误: Clash 产物生成失败，先解决上面的报错"
     exit 1
 fi
 

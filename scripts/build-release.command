@@ -6,6 +6,9 @@ DIST_DIR="$ROOT_DIR/dist"
 VERSION_FILE="$ROOT_DIR/VERSION.txt"
 VERSION="${1:-}"
 VERSION_RE='^v[0-9]+\.[0-9]+\.[0-9]+$'
+# 默认 python3；测试依赖（pyyaml）装在别处时用 PYTHON_BIN 指过来，
+# 否则 Clash 产物的校验会被跳过，卡口就弱了。
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 if [ -z "$VERSION" ]; then
     VERSION="$(tr -d '\r\n' < "$VERSION_FILE")"
@@ -35,7 +38,7 @@ fi
 "$ROOT_DIR/scripts/check-sensitive.sh"
 
 # 产物约束：组顺序、映射、内置规则集名字等。离线跑，不依赖 PC 源码。
-if ! (cd "$ROOT_DIR" && python3 -m unittest discover -s tests); then
+if ! (cd "$ROOT_DIR" && "$PYTHON_BIN" -m unittest discover -s tests); then
     echo "错误: 产物约束检查未通过，先修好再发版"
     exit 1
 fi
@@ -65,7 +68,7 @@ fi
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/karing" "$TMP_DIR/docs/assets" "$TMP_DIR/docs/karing" "$TMP_DIR/scripts" "$TMP_DIR/tests"
+mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/karing" "$TMP_DIR/clash" "$TMP_DIR/docs/assets" "$TMP_DIR/docs/karing" "$TMP_DIR/scripts" "$TMP_DIR/tests"
 cp "$ROOT_DIR/README.md" "$TMP_DIR/README.md"
 cp "$ROOT_DIR/VERSION.txt" "$TMP_DIR/VERSION.txt"
 cp "$ROOT_DIR/CHANGELOG.md" "$TMP_DIR/CHANGELOG.md"
@@ -73,6 +76,7 @@ cp "$ROOT_DIR/shadowrocket/README.md" "$TMP_DIR/shadowrocket/README.md"
 cp "$ROOT_DIR/shadowrocket/"*.conf "$TMP_DIR/shadowrocket/"
 cp "$ROOT_DIR/karing/README.md" "$TMP_DIR/karing/README.md"
 cp "$ROOT_DIR/karing/"*.json "$TMP_DIR/karing/"
+cp "$ROOT_DIR/clash/"* "$TMP_DIR/clash/"
 # 整目录复制，别再逐个列文件名 —— 之前就漏过新增的脚本
 cp "$ROOT_DIR/scripts/"* "$TMP_DIR/scripts/"
 mkdir -p "$TMP_DIR/tests"

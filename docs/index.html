@@ -220,7 +220,7 @@
       }
 
       .pick {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
       }
     }
   </style>
@@ -246,8 +246,15 @@
             <a class="button secondary" href="#shadowrocket">看小火箭用法</a>
           </div>
         </div>
+        <div class="card">
+          <h3>Clash 系</h3>
+          <p>ClashMetaForAndroid / FlClash / Stash 等 mihomo 内核客户端，用覆写加载。</p>
+          <div class="actions">
+            <a class="button secondary" href="#clash">看 Clash 用法</a>
+          </div>
+        </div>
       </div>
-      <p class="url">用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核，规则可以跨平台复用，省一份维护成本。</p>
+      <p class="url">三份产物同源：同一套域名、同一套分组名。用 Hiddify / sing-box 官方客户端的暂时没有对应产物。</p>
 
       <h3>想在手机上操作？</h3>
       <div class="qr-wrap">
@@ -311,6 +318,36 @@
         </tbody>
       </table>
       <p><code>🎬 YouTube</code> 必须排在 <code>🌐 Google</code> 前面，否则 <code>youtubei.googleapis.com</code> 会被 <code>googleapis.com</code> 抢走。导入顺序不要调。</p>
+    </section>
+
+    <section id="clash">
+      <h2>Clash 系（ClashMetaForAndroid / FlClash / Stash）</h2>
+      <p class="lead">这几家都是 mihomo 内核，吃 Clash 语法 —— 正好和 PC 版那份配置同源，所以这份产物几乎不用转换。</p>
+
+      <div class="actions">
+        <a class="button" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/clash/clash-override.yaml">打开覆写文件</a>
+        <a class="button secondary" href="https://github.com/reroc8/mobile-proxy-share-kit/tree/main/clash">查看 GitHub 里的 clash 目录</a>
+      </div>
+      <p class="url">覆写地址：https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/clash/clash-override.yaml</p>
+
+      <h3>怎么用</h3>
+      <ol>
+        <li>先在客户端里导入你自己的订阅。</li>
+        <li>把上面的覆写内容贴进客户端的「覆写 / Override」：
+          <br>ClashMetaForAndroid：设置 → 覆写 → 粘贴内容或填地址 → 保存 → 重新加载配置。
+          <br>FlClash：配置 → 对应订阅 → 覆写 / 自定义配置 → 粘贴同样内容。</li>
+        <li>到策略组里确认 <code>Claude</code> 指向 <code>US</code>、<code>Exchange</code> 指向 <code>SG</code>。</li>
+        <li>全局模式选「规则」。</li>
+      </ol>
+
+      <h3>分组</h3>
+      <p>分组名和前两份完全一致。<code>US</code> / <code>SG</code> 会按你节点名里的地区字样自动归类
+        （「美国 / US / 🇺🇸」「新加坡 / SG / 🇸🇬」），用的正则和 PC 版一致。</p>
+
+      <h3>还没验证的部分</h3>
+      <p>覆写文件本身验证过（YAML 可解析、规则目标都存在、组名与另两份一致）；
+        但「客户端能不能顺利加载这份覆写」我没法真机验证。跑不通的话，
+        把文件里的 <code>rules:</code> 段整体粘到客户端的「自定义规则」里也能用。</p>
     </section>
 
     <section id="shadowrocket">

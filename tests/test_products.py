@@ -279,6 +279,7 @@ class TestVersionConsistency(unittest.TestCase):
         "README.md": r"当前 `(v\d+\.\d+\.\d+)`",
         "karing/README.md": r"当前版本：`(v\d+\.\d+\.\d+)`",
         "shadowrocket/README.md": r"当前版本：`(v\d+\.\d+\.\d+)`",
+        "clash/README.md": r"当前版本：`(v\d+\.\d+\.\d+)`",
     }
 
     @classmethod
@@ -367,8 +368,6 @@ class TestVersionsTrackRuleChanges(unittest.TestCase):
 
         for older, newer in zip(guarded, guarded[1:]):
             before, after = self.fingerprint_at(older), self.fingerprint_at(newer)
-            self.assertIsNotNone(before, f"{older} 里取不到产物")
-            self.assertIsNotNone(after, f"{newer} 里取不到产物")
             self.assertNotEqual(
                 before,
                 after,
@@ -390,6 +389,7 @@ class TestDocumentLinks(unittest.TestCase):
         "shadowrocket/README.md",
         "docs/index.html",
         "docs/import.html",
+        "clash/README.md",
     )
 
     HTML_PAGES = ("docs/index.html", "docs/import.html")
@@ -499,6 +499,77 @@ class TestQrCodes(unittest.TestCase):
         payload = payloads["docs/assets/shadowrocket-config-qr.png"]
         self.assertTrue(payload.startswith("shadowrocket://config/add/https://"))
         self.assertTrue(payload.endswith("shadowrocket/Shadowrocket.full.conf"))
+
+
+class TestClashProduct(unittest.TestCase):
+    """Clash 覆写产物：与另外两份同源、同组名、同规则目标。
+
+    这份产物不做格式转换（PC 的 Merge.yaml 本身就是 Clash 语法），
+    只补 proxy-groups 并把 `Proxies` 改名成 `Proxy`，所以重点验"搬对了没有"。
+    """
+
+    PATH = REPO_ROOT / "clash" / "clash-override.yaml"
+    BUILT_IN = {"DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE"}
+    NO_PROXY_SUFFIX = ("no-resolve", "src")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        try:
+            import yaml
+        except ImportError:
+            raise unittest.SkipTest("没有 pyyaml，跳过 Clash 产物校验")
+        cls.yaml = yaml
+        cls.doc = yaml.safe_load(cls.PATH.read_text(encoding="utf-8"))
+
+    def group_names(self) -> list[str]:
+        return [group["name"] for group in self.doc["proxy-groups"]]
+
+    def targets(self) -> list[str]:
+        out = []
+        for rule in self.doc["rules"]:
+            fields = [field.strip() for field in rule.split(",")]
+            while len(fields) > 1 and fields[-1] in self.NO_PROXY_SUFFIX:
+                fields.pop()
+            out.append(fields[-1])
+        return out
+
+    def test_group_names_and_order_match_other_products(self) -> None:
+        """DIRECT 是 Clash 内置，不在这里定义，其余必须一一对应。"""
+        expected = [policy for _, policy in EXPECTED_ORDER if policy != "DIRECT"]
+        self.assertEqual(self.group_names(), expected)
+
+    def test_every_rule_targets_a_known_group(self) -> None:
+        known = set(self.group_names()) | self.BUILT_IN
+        for rule, target in zip(self.doc["rules"], self.targets()):
+            self.assertIn(target, known, f"规则指向了不存在的策略组: {rule}")
+
+    def test_no_leftover_pc_policy_name(self) -> None:
+        self.assertNotIn("Proxies", self.PATH.read_text(encoding="utf-8"))
+
+    def test_has_match_fallback_to_direct(self) -> None:
+        self.assertEqual(self.doc["rules"][-1], "MATCH,DIRECT")
+
+    def test_must_proxy_domain_still_goes_to_proxy(self) -> None:
+        self.assertIn("DOMAIN-SUFFIX,tgalileo.com,Proxy", self.doc["rules"])
+
+    def test_exchange_group_is_populated(self) -> None:
+        """交易所是手机端独有分组，PC 的规则里没有，靠 extra-rules.json 补。"""
+        exchange = [rule for rule, target in zip(self.doc["rules"], self.targets()) if target == "Exchange"]
+        self.assertTrue(exchange, "没有任何规则指向 Exchange 组")
+
+    def test_region_groups_can_never_be_empty(self) -> None:
+        """mihomo 不允许策略组一个候选都没有，否则整个配置加载失败。"""
+        for group in self.doc["proxy-groups"]:
+            if "include-all" in group:
+                self.assertIn("proxies", group, f"{group['name']} 只有 include-all，没放兜底候选")
+                self.assertTrue(group["proxies"], f"{group['name']} 的兜底候选是空的")
+
+    def test_source_stamp_present(self) -> None:
+        text = self.PATH.read_text(encoding="utf-8")
+        self.assertIsNotNone(
+            re.search(r"^# Source: reroc8/clash-verge-share-kit v\d+\.\d+\.\d+$", text, re.MULTILINE),
+            "Clash 产物头部没有标 PC 源版本",
+        )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,426 @@
+# Mobile Proxy Share Kit — 手机端 Clash 覆写
+# 由 scripts/build-clash-rules.py 从 PC 版规则源生成，勿手改。
+#
+# 用法：ClashMetaForAndroid / FlClash →「覆写 / Override」→ 粘贴这个文件的内容或地址。
+# 它不含节点：节点由你自己的订阅提供，地区组会按节点名自动归类。
+# Source: reroc8/clash-verge-share-kit v0.3.34
+
+proxy-groups:
+  - name: Claude
+    type: select
+    proxies:
+      - US
+      - Proxy
+      - DIRECT
+  - name: AI
+    type: select
+    proxies:
+      - US
+      - SG
+      - Proxy
+      - DIRECT
+  - name: YouTube
+    type: select
+    proxies:
+      - Proxy
+      - US
+      - SG
+      - DIRECT
+  - name: Google
+    type: select
+    proxies:
+      - Proxy
+      - US
+      - SG
+      - DIRECT
+  - name: Exchange
+    type: select
+    proxies:
+      - SG
+      - Proxy
+      - DIRECT
+  - name: Telegram
+    type: select
+    proxies:
+      - Proxy
+      - US
+      - SG
+      - DIRECT
+  - name: US
+    type: select
+    include-all: true
+    filter: "(?i)(美国|美國|United States|(^|[^A-Za-z])US([^A-Za-z]|$)|(^|[^A-Za-z])USA([^A-Za-z]|$)|🇺🇸)"
+    proxies:
+      - DIRECT
+  - name: SG
+    type: select
+    include-all: true
+    filter: "(?i)(新加坡|Singapore|(^|[^A-Za-z])SG([^A-Za-z]|$)|🇸🇬)"
+    proxies:
+      - DIRECT
+  - name: Proxy
+    type: select
+    include-all: true
+    proxies:
+      - DIRECT
+
+rule-providers:
+  private-domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/private.mrs"
+    path: ./ruleset/private-domain.mrs
+    interval: 86400
+    proxy: Proxy
+  private-ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/privateip.mrs"
+    path: ./ruleset/private-ip.mrs
+    interval: 86400
+    proxy: Proxy
+  cn-domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cn.mrs"
+    path: ./ruleset/cn-domain.mrs
+    interval: 86400
+    proxy: Proxy
+  cn-ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/cnip.mrs"
+    path: ./ruleset/cn-ip.mrs
+    interval: 86400
+    proxy: Proxy
+  tld-proxy:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/tld-proxy.mrs"
+    path: ./ruleset/tld-proxy.mrs
+    interval: 86400
+    proxy: Proxy
+  global-domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Global/Global_Domain.yaml"
+    path: ./ruleset/global-domain.yaml
+    interval: 86400
+    proxy: Proxy
+  google:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Google/Google.yaml"
+    path: ./ruleset/google.yaml
+    interval: 86400
+    proxy: Proxy
+  telegramcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/telegramcidr.txt"
+    path: ./ruleset/telegramcidr.yaml
+    interval: 86400
+    proxy: Proxy
+  apple:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/apple.txt"
+    path: ./ruleset/apple.yaml
+    interval: 86400
+    proxy: Proxy
+  icloud:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/icloud.txt"
+    path: ./ruleset/icloud.yaml
+    interval: 86400
+    proxy: Proxy
+  applications:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/applications.txt"
+    path: ./ruleset/applications.yaml
+    interval: 86400
+    proxy: Proxy
+
+# ── 分流规则 ──
+
+rules:
+  # 局域网和私有地址直连
+  - RULE-SET,private-domain,DIRECT
+  - RULE-SET,private-ip,DIRECT,no-resolve
+  # 钉钉进程级强制直连：置于所有业务精确规则之前，钉钉全家桶（DingTalk、
+  # DingMeeting 等）的任何连接都不会被后面的精确域名/规则集抢先送进代理。
+  # 已知取舍：钉钉内置浏览器打开 Claude/AI 等需代理站点时同样直连（无法加载）。
+  - PROCESS-NAME-REGEX,(?i)ding(talk|meeting),DIRECT
+  # WorkBuddy AI 国际版海外遥测：sg.tgalileo.com 解析到腾讯云新加坡（43.156.86.0/24），
+  # 但该域在 cn-domain 规则集里（+.tgalileo.com），按常规会被判为国内直连。前置精确
+  # 规则改走代理。取舍：遥测 SNI 由「对 ISP 可见」变为「对代理节点可见」，并非消除；
+  # 换来的是 ISP 侧看不到该 SNI，以及海外端点走代理链路的质量。
+  # 国内版遥测走 galileotelemetry.tencent.com（命中 cn-domain 的 +.tencent.com），不受影响。
+  - DOMAIN-SUFFIX,tgalileo.com,Proxy
+  # Lexmount（AI Agent 云浏览器，browser.lexmount.com）：云浏览器服务需海外出口，
+  # 该域不在任何规则集内，默认会落到兜底 DIRECT，故前置精确规则。
+  - DOMAIN-SUFFIX,lexmount.com,US
+  # Meta Muse（个人 AI 代理，2026-09 起仅北美开放）与 muse.ai：需美区出口。
+  # Muse 桌面版实际连的是 graph.facebook.com 等 Meta 域名（走 global-domain 规则集），
+  # 按域名无法与服务区分，故用进程名匹配（前缀匹配，以覆盖可能存在的 helper 子进程）；
+  # muse.meta.com 为网页版入口。
+  - PROCESS-NAME-REGEX,(?i)^muse,US
+  - DOMAIN-SUFFIX,muse.meta.com,US
+  - DOMAIN-SUFFIX,muse.ai,US
+  # Dola（字节豆包海外版，dola.com）：区域锁定，US / CA / AU / 中国大陆均不可用，
+  # 主力市场为东南亚与英国。用 SG 地区组，禁用 US 组。
+  - DOMAIN-SUFFIX,dola.com,SG
+  # Google account / auth / billing stay on the stable Google group
+  - DOMAIN,accounts.google.com,Google
+  - DOMAIN,myaccount.google.com,Google
+  - DOMAIN,passwords.google.com,Google
+  - DOMAIN,families.google.com,Google
+  - DOMAIN,takeout.google.com,Google
+  - DOMAIN,payments.google.com,Google
+  - DOMAIN,pay.google.com,Google
+  - DOMAIN,wallet.google.com,Google
+  - DOMAIN-SUFFIX,oauth2.googleapis.com,Google
+  - DOMAIN-SUFFIX,oauth2.googleusercontent.com,Google
+  # Claude is isolated to a US-only group
+  # Shared Auth0 / Ghost / Cloudflare suffixes are intentionally not used.
+  - DOMAIN,anthropic.auth0.com,Claude
+  - DOMAIN,anthropic-com.ghost.io,Claude
+  - DOMAIN,anthropic.com.cdn.cloudflare.net,Claude
+  - DOMAIN,servd-anthropic-website.b-cdn.net,Claude
+  - DOMAIN-SUFFIX,clau.de,Claude
+  - DOMAIN-SUFFIX,claude.ai,Claude
+  - DOMAIN-SUFFIX,claude.com,Claude
+  - DOMAIN-SUFFIX,claudemcpclient.com,Claude
+  - DOMAIN-SUFFIX,claudemcpcontent.com,Claude
+  - DOMAIN-SUFFIX,claudeusercontent.com,Claude
+  - DOMAIN-SUFFIX,anthropic.com,Claude
+  # International AI services use a controlled AI group with only US / TW options
+  - DOMAIN-SUFFIX,chatgpt.com,AI
+  - DOMAIN-SUFFIX,openai.com,AI
+  - DOMAIN-SUFFIX,oaistatic.com,AI
+  - DOMAIN-SUFFIX,oaiusercontent.com,AI
+  - DOMAIN-SUFFIX,oaistatsig.com,AI
+  - DOMAIN-SUFFIX,openaimerge.com,AI
+  - DOMAIN-SUFFIX,openaiapi-site.azureedge.net,AI
+  # Codex / OpenAI dedicated CDN and storage endpoints. Shared services such as
+  # auth0.com and stripe.com stay out of this list to avoid hijacking other apps.
+  - DOMAIN,openai-api.arkoselabs.com,AI
+  - DOMAIN,openaiassets.blob.core.windows.net,AI
+  - DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net,AI
+  - DOMAIN,openaicomproductionae4b.blob.core.windows.net,AI
+  - DOMAIN,production-openaicom-storage.azureedge.net,AI
+  - DOMAIN-SUFFIX,chat.com,AI
+  - DOMAIN-SUFFIX,chatgpt.livekit.cloud,AI
+  - DOMAIN-SUFFIX,openaicom.imgix.net,AI
+  - DOMAIN-SUFFIX,openai.com.cdn.cloudflare.net,AI
+  - DOMAIN-SUFFIX,gemini.google.com,AI
+  - DOMAIN-SUFFIX,bard.google.com,AI
+  - DOMAIN-SUFFIX,generativelanguage.googleapis.com,AI
+  - DOMAIN-SUFFIX,ai.google.dev,AI
+  - DOMAIN-SUFFIX,aistudio.google.com,AI
+  - DOMAIN-SUFFIX,makersuite.google.com,AI
+  - DOMAIN-SUFFIX,notebooklm.google.com,AI
+  - DOMAIN-SUFFIX,labs.google,AI
+  - DOMAIN-SUFFIX,deepmind.com,AI
+  # Gemini / Google AI endpoints are kept explicit. Do not route broad shared
+  # domains such as apis.google.com through AI because Gmail also uses them.
+  - DOMAIN,alkalicore-pa.clients6.google.com,AI
+  - DOMAIN,alkalimakersuite-pa.clients6.google.com,AI
+  - DOMAIN,antigravity-pa.googleapis.com,AI
+  - DOMAIN,antigravity.googleapis.com,AI
+  - DOMAIN,cloudaicompanion.googleapis.com,AI
+  - DOMAIN,cloudcode-pa.googleapis.com,AI
+  - DOMAIN,daily-cloudcode-pa.googleapis.com,AI
+  - DOMAIN,notebooklm-pa.googleapis.com,AI
+  - DOMAIN,notebooklm.googleapis.com,AI
+  - DOMAIN,webchannel-alkalimakersuite-pa.clients6.google.com,AI
+  - DOMAIN-SUFFIX,aicode.googleapis.com,AI
+  - DOMAIN-SUFFIX,aida.googleapis.com,AI
+  - DOMAIN-SUFFIX,aisandbox-pa.googleapis.com,AI
+  - DOMAIN-SUFFIX,antigravity-unleash.goog,AI
+  - DOMAIN-SUFFIX,antigravity.google,AI
+  - DOMAIN-SUFFIX,deepmind.google,AI
+  - DOMAIN-SUFFIX,gemini.google,AI
+  - DOMAIN-SUFFIX,gemini.gstatic.com,AI
+  - DOMAIN-SUFFIX,generativeai.google,AI
+  - DOMAIN-SUFFIX,geller-pa.googleapis.com,AI
+  - DOMAIN-SUFFIX,jules.google,AI
+  - DOMAIN-SUFFIX,jules.google.com,AI
+  - DOMAIN-SUFFIX,labs.google.com,AI
+  - DOMAIN-SUFFIX,notebooklm.google,AI
+  - DOMAIN-SUFFIX,opal.google,AI
+  - DOMAIN-SUFFIX,opal.google.com,AI
+  - DOMAIN-SUFFIX,proactivebackend-pa.googleapis.com,AI
+  - DOMAIN-SUFFIX,robinfrontend-pa.googleapis.com,AI
+  - DOMAIN-SUFFIX,stitch.withgoogle.com,AI
+  - DOMAIN-SUFFIX,perplexity.ai,AI
+  - DOMAIN-SUFFIX,pplx.ai,AI
+  - DOMAIN-SUFFIX,poe.com,AI
+  - DOMAIN-SUFFIX,x.ai,AI
+  - DOMAIN-SUFFIX,grok.com,AI
+  - DOMAIN-SUFFIX,cursor.com,AI
+  - DOMAIN-SUFFIX,cursor.sh,AI
+  - DOMAIN-SUFFIX,cursorapi.com,AI
+  - DOMAIN-SUFFIX,windsurf.com,AI
+  - DOMAIN-SUFFIX,codeium.com,AI
+  - DOMAIN-SUFFIX,copilot.microsoft.com,AI
+  - DOMAIN-SUFFIX,copilot.cloud.microsoft,AI
+  - DOMAIN-SUFFIX,sydney.bing.com,AI
+  - DOMAIN-SUFFIX,githubcopilot.com,AI
+  - DOMAIN-SUFFIX,copilot-proxy.githubusercontent.com,AI
+  - DOMAIN-SUFFIX,huggingface.co,AI
+  - DOMAIN-SUFFIX,hf.co,AI
+  - DOMAIN-SUFFIX,character.ai,AI
+  - DOMAIN-SUFFIX,replicate.com,AI
+  - DOMAIN-SUFFIX,replicate.delivery,AI
+  - DOMAIN-SUFFIX,midjourney.com,AI
+  - DOMAIN-SUFFIX,runwayml.com,AI
+  - DOMAIN-SUFFIX,stability.ai,AI
+  - DOMAIN-SUFFIX,clipdrop.co,AI
+  - DOMAIN-SUFFIX,ideogram.ai,AI
+  - DOMAIN-SUFFIX,leonardo.ai,AI
+  - DOMAIN-SUFFIX,mistral.ai,AI
+  - DOMAIN-SUFFIX,groq.com,AI
+  - DOMAIN-SUFFIX,cohere.ai,AI
+  - DOMAIN-SUFFIX,cohere.com,AI
+  - DOMAIN-SUFFIX,meta.ai,AI
+  - DOMAIN-SUFFIX,elevenlabs.io,AI
+  - DOMAIN-SUFFIX,elevenlabs.com,AI
+  - DOMAIN-SUFFIX,suno.ai,AI
+  - DOMAIN-SUFFIX,suno.com,AI
+  - DOMAIN-SUFFIX,v0.dev,AI
+  - DOMAIN-SUFFIX,sdk.vercel.ai,AI
+  - DOMAIN-SUFFIX,together.ai,AI
+  - DOMAIN-SUFFIX,together.xyz,AI
+  # Mainland China AI services should stay DIRECT, not use the international AI group.
+  # Some use .com / .ai / .chat domains, so keep them before the broad global rules.
+  - DOMAIN-SUFFIX,deepseek.com,DIRECT
+  - DOMAIN-SUFFIX,kimi.ai,DIRECT
+  - DOMAIN-SUFFIX,moonshot.cn,DIRECT
+  - DOMAIN-SUFFIX,doubao.com,DIRECT
+  - DOMAIN-SUFFIX,volcengine.com,DIRECT
+  - DOMAIN-SUFFIX,volces.com,DIRECT
+  - DOMAIN-SUFFIX,qwen.ai,DIRECT
+  - DOMAIN-SUFFIX,tongyi.aliyun.com,DIRECT
+  - DOMAIN-SUFFIX,dashscope.aliyuncs.com,DIRECT
+  - DOMAIN-SUFFIX,modelscope.cn,DIRECT
+  - DOMAIN-SUFFIX,yiyan.baidu.com,DIRECT
+  - DOMAIN-SUFFIX,wenxin.baidu.com,DIRECT
+  - DOMAIN-SUFFIX,aistudio.baidu.com,DIRECT
+  - DOMAIN-SUFFIX,baidubce.com,DIRECT
+  - DOMAIN-SUFFIX,yuanbao.tencent.com,DIRECT
+  - DOMAIN-SUFFIX,hunyuan.tencent.com,DIRECT
+  - DOMAIN-SUFFIX,hunyuan.cloud.tencent.com,DIRECT
+  - DOMAIN-SUFFIX,tencentcloudapi.com,DIRECT
+  - DOMAIN-SUFFIX,chatglm.cn,DIRECT
+  - DOMAIN-SUFFIX,zhipuai.cn,DIRECT
+  - DOMAIN-SUFFIX,bigmodel.cn,DIRECT
+  - DOMAIN-SUFFIX,minimax.chat,DIRECT
+  - DOMAIN-SUFFIX,minimax.io,DIRECT
+  - DOMAIN-SUFFIX,hailuoai.com,DIRECT
+  - DOMAIN-SUFFIX,xfyun.cn,DIRECT
+  - DOMAIN-SUFFIX,sparkdesk.cn,DIRECT
+  - DOMAIN-SUFFIX,360.com,DIRECT
+  - DOMAIN-SUFFIX,360.cn,DIRECT
+  - DOMAIN-SUFFIX,baichuan-ai.com,DIRECT
+  - DOMAIN-SUFFIX,baichuan-ai.cn,DIRECT
+  - DOMAIN-SUFFIX,01.ai,DIRECT
+  - DOMAIN-SUFFIX,lingyiwanwu.com,DIRECT
+  - DOMAIN-SUFFIX,stepfun.com,DIRECT
+  - DOMAIN-SUFFIX,stepchat.cn,DIRECT
+  - DOMAIN-SUFFIX,sensenova.cn,DIRECT
+  - DOMAIN-SUFFIX,sensecore.cn,DIRECT
+  - DOMAIN-SUFFIX,sensetime.com,DIRECT
+  - DOMAIN-SUFFIX,metaso.cn,DIRECT
+  - DOMAIN-SUFFIX,metaso.com,DIRECT
+  # 钉钉域名直连：服务于浏览器等非钉钉进程访问钉钉站点
+  # （钉钉进程自身已由顶部的 PROCESS-NAME-REGEX 规则全覆盖）
+  - DOMAIN-SUFFIX,dingtalk.com,DIRECT
+  - DOMAIN-SUFFIX,dingtalkcdn.com,DIRECT
+  - DOMAIN-SUFFIX,lwurl.to,DIRECT
+  # 自定义直连：放在宽泛代理规则前，避免被后续规则集抢先命中
+  - DOMAIN,codebuddy.cn,DIRECT
+  - DOMAIN,copilot.tencent.com,DIRECT
+  # Apple / iCloud
+  # Apple 被墙域名走代理
+  - DOMAIN,gateway.icloud.com,Proxy
+  - DOMAIN,gs.apple.com,Proxy
+  - DOMAIN-SUFFIX,developer.apple.com,Proxy
+  - DOMAIN,setup.icloud.com,Proxy
+  - RULE-SET,apple,DIRECT
+  - RULE-SET,icloud,DIRECT
+  # 用户自定义：mail.com 强制走美国
+  - DOMAIN-SUFFIX,mail.com,US
+  # YouTube
+  - DOMAIN-SUFFIX,youtube.com,YouTube
+  - DOMAIN-SUFFIX,youtu.be,YouTube
+  - DOMAIN-SUFFIX,youtube-nocookie.com,YouTube
+  - DOMAIN-SUFFIX,youtubeeducation.com,YouTube
+  - DOMAIN-SUFFIX,youtubegaming.com,YouTube
+  - DOMAIN-SUFFIX,youtubekids.com,YouTube
+  - DOMAIN-SUFFIX,googlevideo.com,YouTube
+  - DOMAIN-SUFFIX,ytimg.com,YouTube
+  - DOMAIN-SUFFIX,youtubei.googleapis.com,YouTube
+  - DOMAIN-SUFFIX,yt3.ggpht.com,YouTube
+  # Google 生态
+  - RULE-SET,google,Google
+  # Telegram domains plus the existing official IP ranges
+  - DOMAIN-SUFFIX,cdn-telegram.org,Telegram
+  - DOMAIN-SUFFIX,legra.ph,Telegram
+  - DOMAIN-SUFFIX,t.me,Telegram
+  - DOMAIN-SUFFIX,tdesktop.com,Telegram
+  - DOMAIN-SUFFIX,telegra.ph,Telegram
+  - DOMAIN-SUFFIX,telegram-cdn.org,Telegram
+  - DOMAIN-SUFFIX,telegram.dog,Telegram
+  - DOMAIN-SUFFIX,telegram.me,Telegram
+  - DOMAIN-SUFFIX,telegram.org,Telegram
+  - DOMAIN-SUFFIX,telegram.space,Telegram
+  - DOMAIN-SUFFIX,telegramdownload.com,Telegram
+  - DOMAIN-SUFFIX,telesco.pe,Telegram
+  - RULE-SET,telegramcidr,Telegram,no-resolve
+  # Business rules stay first. Generic application bypass only runs before the
+  # domestic/global base layers, so AI and exchange routing keep priority.
+  - RULE-SET,applications,DIRECT
+  # 国内基础规则优先于通用海外规则，降低国内 .com 小站误走代理的概率
+  - RULE-SET,cn-domain,DIRECT
+  - RULE-SET,cn-ip,DIRECT,no-resolve
+  # 海外域名由 blackmatrix7 Global_Domain 补漏
+  - RULE-SET,global-domain,Proxy
+  # 国外顶级域名
+  - RULE-SET,tld-proxy,Proxy
+  # 交易所（手机端独有分组）
+  - DOMAIN-SUFFIX,okx.com,Exchange
+  - DOMAIN-SUFFIX,okx-dns.com,Exchange
+  - DOMAIN-SUFFIX,bybit.com,Exchange
+  - DOMAIN-SUFFIX,bycsi.com,Exchange
+  - DOMAIN-SUFFIX,binance.com,Exchange
+  - DOMAIN-SUFFIX,binance.me,Exchange
+  - DOMAIN-SUFFIX,binance.info,Exchange
+  - DOMAIN-SUFFIX,binancecnt.com,Exchange
+  - DOMAIN-SUFFIX,bntrace.com,Exchange
+  - DOMAIN-SUFFIX,bitget.com,Exchange
+  - DOMAIN-SUFFIX,gate.io,Exchange
+  - DOMAIN-SUFFIX,gateio.live,Exchange
+  - DOMAIN-SUFFIX,kucoin.com,Exchange
+  - DOMAIN-SUFFIX,kucnck.com,Exchange
+  - DOMAIN-SUFFIX,mexc.com,Exchange
+  - DOMAIN-SUFFIX,mexc.co,Exchange
+  - DOMAIN-SUFFIX,crypto.com,Exchange
+  - DOMAIN-SUFFIX,coinbase.com,Exchange
+  - DOMAIN-SUFFIX,kraken.com,Exchange
+  - DOMAIN-SUFFIX,htx.com,Exchange
+  - DOMAIN-SUFFIX,huobi.com,Exchange
+  - DOMAIN-SUFFIX,bingx.com,Exchange
+  - DOMAIN-SUFFIX,bitmart.com,Exchange
+  - DOMAIN-SUFFIX,bitfinex.com,Exchange
+  - DOMAIN-SUFFIX,bitstamp.net,Exchange
+  - DOMAIN-SUFFIX,upbit.com,Exchange
+  # 最终兜底：未知站点直连，避免国内 .com 被误送代理导致 502
+  - MATCH,DIRECT

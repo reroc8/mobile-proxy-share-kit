@@ -18,6 +18,25 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.2
+
+- **新增 `clash/` 产物**，覆盖 ClashMetaForAndroid / FlClash / Stash 这类 mihomo 内核客户端。
+  这三家吃 Clash YAML，而 PC 版的 `Merge.yaml` **本来就是 Clash 语法**，所以这份产物几乎不做转换：
+  原样搬 `rule-providers` 和 `rules`，只把策略名 `Proxies` 改成另外两份统一用的 `Proxy`，
+  并补上手机端独有的 `Exchange` 组。
+- 新增 `scripts/build-clash-rules.py`。补的 `proxy-groups` 用 mihomo 的 `include-all` + `filter`：
+  PC 那边靠 `Script.js` 按订阅节点动态建组，手机端没有 JS 执行器，改用按节点名里的地区字样自动归类。
+  地区正则直接取自 PC 版 `config/Script.js` 的 `regionPatterns`，保证两边认的是同一批节点。
+  地区组里都放了一个 `DIRECT` 兜底 —— mihomo 不允许策略组一个候选都没有，用户没有美国节点时
+  不能让整个配置加载失败。
+- 三份产物的分组名与顺序现在完全一致（10 组，Clash 那份的 `DIRECT` 是内置的，只定义 9 个）。
+- **版本号语义调整**：从「规则内容」扩展为「用户拿到的产物」—— 新增覆盖一个客户端也算变化。
+  指纹相应把 Clash 产物纳入，并且不再因为「某个版本还没有这份产物」而跳过检查
+  （那会让「新增产物」这种变化被漏掉）。
+- `tests/test_products.py` 增加 Clash 产物校验（YAML 可解析、规则目标都存在、组名与另两份一致、
+  `MATCH` 兜底、地区组不会为空、无残留 PC 策略名）。CI 相应安装 `pyyaml`。
+- **对应 PC 源：`v0.3.34`**
+
 ## v0.2.1
 
 **两份产物对齐 PC 版规则源。** v0.2.0 新增 Karing 产物时，小火箭还停在 7 月的手工快照上，

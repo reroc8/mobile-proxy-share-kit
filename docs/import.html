@@ -165,6 +165,22 @@
       </details>
     </section>
 
+    <section>
+      <h2>Clash 系（CMFA / FlClash / Stash）</h2>
+      <p class="muted">这几家用覆写加载，没有一键导入的接口，需要下载文件后在客户端里粘贴。</p>
+      <a class="button secondary" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/clash/clash-override.yaml">打开覆写文件</a>
+      <details>
+        <summary>下载完怎么用？</summary>
+        <ol>
+          <li>先在客户端里导入你自己的订阅。</li>
+          <li>把刚才打开的内容整段复制。</li>
+          <li>ClashMetaForAndroid：设置 → 覆写 → 粘贴 → 保存 → 重新加载配置。<br>
+              FlClash：配置 → 对应订阅 → 覆写 → 粘贴。</li>
+          <li>到策略组确认 <code>Claude</code> 指向 <code>US</code>，全局模式选「规则」。</li>
+        </ol>
+      </details>
+    </section>
+
     <section class="warn">
       <h2>导入后必做</h2>
       <p>两份规则分组一样。导入后要到策略里把自己的节点放进去，否则不会走代理：</p>
