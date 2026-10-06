@@ -16,9 +16,6 @@
   注意：这个 scheme 不能用 iOS 系统相机扫（相机只认 http/https 等固定类型），
   必须用 App 内的扫码。
 
-* `entry-qr.png` —— 内容是手机操作页的 https 地址。系统相机可扫，用于
-  「在电脑上看页面、想把页面弄到手机上操作」的场景。
-
 依赖（只在本机生成时用，不属于运行时依赖）：
     pip install segno opencv-python-headless
 
@@ -38,12 +35,12 @@ PAGES_BASE = "https://reroc8.github.io/mobile-proxy-share-kit"
 
 SHADOWROCKET_CONFIG = f"{RAW_BASE}/shadowrocket/Shadowrocket.full.conf"
 SHADOWROCKET_SCHEME = f"shadowrocket://config/add/{SHADOWROCKET_CONFIG}"
-PHONE_IMPORT_PAGE = f"{PAGES_BASE}/import.html"
-
 # (输出文件, 二维码内容, 说明)
+# 只做一张：能被小火箭直接扫码导入的配置码。
+# 曾经还有第二张「入口码」指向手机操作页，但那样等于「扫码 → 打开网页 → 网页上再扫一次」，
+# 绕两圈。一张码直达就够了。
 QRCODES = (
     ("docs/assets/shadowrocket-config-qr.png", SHADOWROCKET_SCHEME, "小火箭扫码导入（用 App 内扫码）"),
-    ("docs/assets/entry-qr.png", PHONE_IMPORT_PAGE, "手机操作页入口（用系统相机扫）"),
 )
 
 
