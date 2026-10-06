@@ -17,25 +17,33 @@ PC 靠 `RULE-SET` 表达、Shadowrocket 没有等价写法的部分，在脚本�
 
 ## 一键导入
 
-在 **iPhone / iPad 上用 Safari** 打开手机入口页，点「一键导入完整骨架模板」：
+有三条路，按你用哪台设备挑一条。
+
+**① 已经在手机上** —— 用 Safari 打开手机操作页，点「一键导入」：
 
 ```text
-https://reroc8.github.io/mobile-proxy-share-kit/
+https://reroc8.github.io/mobile-proxy-share-kit/import.html
 ```
 
-按钮实际调用的是 Shadowrocket 的 URL Scheme，点完手机会弹「在 Shadowrocket 中打开」，
-确认后自动下载配置并启用：
+**② 在电脑上看页面** —— 打开手机上的 Shadowrocket → 首页右上角扫码 → 扫入口页上那张二维码。
+它直接编码了配置地址，扫完就下载并启用。
 
 ```text
 shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf
 ```
 
-两个限制：
+**③ 上面都不行** —— 手动四步：复制模板链接 → Shadowrocket「配置」→ 右上角 `+` → 粘贴 → 下载 →
+在远程文件里点它选「使用配置」→ 回首页把「全局路由」改成「配置」。
 
-- **只能用 Safari 点。** 电脑上、或微信/QQ 内置浏览器里点它不会有反应（内置浏览器不处理自定义
-  scheme），要走下面的手动步骤。
-- **方案出自社区维护的官方群组关键词文件**（`lowertop/Shadowrocket` 手册的 URL-Schemes 一节），
-  不是官方开发者文档。如果点了没反应，同样走手动步骤。
+### 几个容易踩的点
+
+- **必须用 Shadowrocket 自带的扫码**，不能用 iOS 系统相机。系统相机的二维码动作类型是固定的
+  一组（http/https、tel、mailto、sms、geo、vCard、iCalendar、Wi-Fi），不认 `shadowrocket://`，
+  扫出来只会是一段文本。App 内扫码才认。
+- **`shadowrocket://` 链接只能在 Safari 里点**，电脑浏览器、微信内置浏览器都不会有反应。
+- 这个 scheme 形式不是官方开发者文档里的，来源是同类规则项目的实际做法
+  （`Johnshall/Shadowrocket-ADBlock-Rules-Forever` 的二维码解码出来就是同样的
+  `shadowrocket://config/add/https://...`）。所以手动路径一直保留着。
 
 ## 手动导入（一键失败时用）
 

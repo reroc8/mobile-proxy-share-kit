@@ -249,12 +249,12 @@
       </div>
       <p class="url">用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核，规则可以跨平台复用，省一份维护成本。</p>
 
-      <h3>在手机上操作</h3>
+      <h3>想在手机上操作？</h3>
       <div class="qr-wrap">
         <img class="qr" alt="手机操作页二维码" src="assets/entry-qr.png">
         <div>
-          <p>你正在电脑上看这个页面？用手机扫左边的码，会打开一个<strong>只有两个按钮</strong>的
-           精简页：小火箭一键导入、Karing 下载 JSON。不用在本页里翻找。</p>
+          <p>你正在电脑上看这个页面？用手机的<strong>系统相机</strong>扫左边的码，会打开一个
+           <strong>只有两个按钮</strong>的精简页：小火箭一键导入、Karing 下载 JSON，不用在本页里翻找。</p>
           <p>二维码只指向那个页面，不含任何节点，也不含任何账号信息。需要完整说明时页面上有链接回到本页。</p>
         </div>
       </div>
@@ -321,9 +321,21 @@
         <a class="button" href="shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf">一键导入完整骨架模板</a>
         <a class="button secondary" href="https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.rules.conf">高级用户：只打开规则片段</a>
       </div>
-      <p><strong>「一键导入」只能在 iPhone / iPad 上用 Safari 打开本页再点</strong>，手机会弹出「在 Shadowrocket 中打开」，确认后自动下载并启用配置。在电脑上或微信内置浏览器里点它不会有反应 —— 那种情况走下面的手动步骤。</p>
+      <p><strong>「一键导入」只能在 iPhone / iPad 上用 Safari 打开本页再点</strong>，手机会弹出「在 Shadowrocket 中打开」，确认后自动下载并启用配置。在电脑上或微信内置浏览器里点它不会有反应 —— 那种情况用下面的二维码或手动步骤。</p>
       <p class="url">模板链接：https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf</p>
       <p>规则和 Karing 那份同源，都从 PC 版配置生成，不会两边各走各的。</p>
+
+      <h3>用 Shadowrocket 扫码导入</h3>
+      <div class="qr-wrap">
+        <img class="qr" alt="Shadowrocket 配置导入二维码" src="assets/shadowrocket-config-qr.png">
+        <div>
+          <p>在电脑上看本页时，打开手机上的 Shadowrocket → 首页右上角扫码 → 扫左边的码，
+           直接下载并启用配置。</p>
+          <p><strong>必须用 Shadowrocket 自带的扫码</strong>（或扫完在 Safari 里手动打开）。这个二维码里是
+           <code>shadowrocket://</code> 开头的地址，iOS 系统相机不认这种类型，只会显示成文本。</p>
+          <p>扫码不成功就用下面的手动步骤，一样的效果。</p>
+        </div>
+      </div>
 
       <h3>用法</h3>
       <ol>

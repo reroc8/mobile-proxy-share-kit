@@ -315,15 +315,19 @@ class TestVersionConsistency(unittest.TestCase):
             self.assertTrue((REPO_ROOT / relative).is_file(), f"缺少 {relative}")
 
 
-def load_bump_tool():
-    """bump-version.py 文件名带连字符，不能直接 import，用 importlib 载入。"""
+def load_script(filename: str):
+    """scripts/ 下的文件名带连字符，不能直接 import，用 importlib 载入。"""
     import importlib.util
 
-    path = REPO_ROOT / "scripts" / "bump-version.py"
-    spec = importlib.util.spec_from_file_location("bump_version", path)
+    path = REPO_ROOT / "scripts" / filename
+    spec = importlib.util.spec_from_file_location(filename.replace("-", "_"), path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_bump_tool():
+    return load_script("bump-version.py")
 
 
 class TestVersionsTrackRuleChanges(unittest.TestCase):
@@ -461,6 +465,40 @@ class TestDocumentLinks(unittest.TestCase):
         html = self.read("docs/import.html")
         self.assertIn("shadowrocket://config/add/", html)
         self.assertIn('href="karing/karing-diversion-rules.json"', html)
+
+
+class TestQrCodes(unittest.TestCase):
+    """二维码内容错了，要等用户扫了才发现，而且多数人不会反馈。所以直接解码回读。
+
+    预期内容取自 scripts/make-qr.py（唯一来源），不在这里另抄一份。
+    opencv 不是运行时依赖，没装就跳过 —— CI 里不装它。
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        try:
+            import cv2
+        except ImportError:
+            raise unittest.SkipTest("没有 opencv，跳过二维码解码校验")
+        cls.cv2 = cv2
+        cls.detector = cv2.QRCodeDetector()
+        cls.qrcodes = load_script("make-qr.py").QRCODES
+
+    def test_payloads_match_the_generator(self) -> None:
+        self.assertTrue(self.qrcodes, "make-qr.py 里没有定义任何二维码")
+        for relative, payload, _ in self.qrcodes:
+            path = REPO_ROOT / relative
+            self.assertTrue(path.is_file(), f"缺少 {relative}，跑一下 scripts/make-qr.py")
+            decoded, _, _ = self.detector.detectAndDecode(self.cv2.imread(str(path)))
+            self.assertEqual(decoded, payload, f"{relative} 的实际内容和声明不一致")
+
+    def test_shadowrocket_qr_uses_the_app_scheme(self) -> None:
+        """小火箭那张必须是 shadowrocket://config/add/... —— 系统相机扫不了它，
+        只能用 App 内扫码，页面文案也要照此写。"""
+        payloads = {rel: payload for rel, payload, _ in self.qrcodes}
+        payload = payloads["docs/assets/shadowrocket-config-qr.png"]
+        self.assertTrue(payload.startswith("shadowrocket://config/add/https://"))
+        self.assertTrue(payload.endswith("shadowrocket/Shadowrocket.full.conf"))
 
 
 if __name__ == "__main__":
