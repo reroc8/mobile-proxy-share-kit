@@ -562,6 +562,47 @@ class TestShadowrocketFallback(unittest.TestCase):
             self.assertIn("GEOIP,CN,CN", rules, f"{path.name} 少了国内 IP 规则")
 
 
+class TestRegionFilters(unittest.TestCase):
+    """地区组的 policy-regex-filter 必须靠词边界认两字母缩写。
+
+    踩过的坑：`SG` 裸写会匹配到任何含这两个字母的名字 —— 用户报「SG 里有 2 个美国」，
+    根因是节点叫「🇺🇸 美国 SG 中转」这类，被 SG 组抢走了。
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.filters = load_script("build-shadowrocket-rules.py").REGION_FILTERS
+
+    def matches(self, region: str, name: str) -> bool:
+        return re.search(self.filters[region], name) is not None
+
+    def test_no_bare_two_letter_codes(self) -> None:
+        """两字母缩写一律不收 —— 加词边界也挡不住「🇺🇸 美国 SG 中转」这种。"""
+        for region, pattern in self.filters.items():
+            for code in ("US", "USA", "SG", "HK", "JP", "TW"):
+                self.assertNotIn(code, pattern, f"{region} 的正则里出现了 {code}，会误匹配")
+
+    def test_us_node_mentioning_sg_stays_in_us(self) -> None:
+        """用户实际报过的形态：SG 组里混进了 2 个美国节点。"""
+        name = "🇺🇸 美国 SG 中转"
+        self.assertTrue(self.matches("US", name))
+        self.assertFalse(self.matches("SG", name), "美国节点不该被 SG 组收走")
+
+    def test_words_containing_the_codes_are_not_matched(self) -> None:
+        for name in ("AUS 悉尼", "RUS 莫斯科", "PLUS 加速", "SGP 转接", "HKG 专线", "US 01", "SG-02"):
+            matched = [r for r in self.filters if self.matches(r, name)]
+            self.assertEqual(matched, [], f"{name} 不该进任何地区组，实际进了 {matched}")
+
+    def test_real_nodes_still_match(self) -> None:
+        for region, names in {
+            "US": ("🇺🇸 United States 01", "美国 洛杉矶 02", "洛杉矶 03", "🇺🇸 US West"),
+            "SG": ("🇸🇬 Singapore 01", "新加坡 02", "狮城 03"),
+            "HK": ("🇭🇰 香港 01", "深港 02", "Hong Kong 03"),
+        }.items():
+            for name in names:
+                self.assertTrue(self.matches(region, name), f"{name} 应该进 {region} 组")
+
+
 class TestRemoteRuleSets(unittest.TestCase):
     """Google / YouTube / Telegram / Exchange 四个组改用远程规则集。
 

@@ -118,10 +118,16 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 `US` / `SG` / `HK` 三个组用 `policy-regex-filter` 按节点名里的地区字样**自动收节点**，你不需要手动往里拖：
 
 ```
-US = url-test,url=http://www.gstatic.com/generate_204,interval=600,tolerance=0,timeout=5,policy-regex-filter=🇺🇸|美国|US|USA|United States|洛杉矶|圣何塞|西雅图|芝加哥|纽约|达拉斯|凤凰城
+US = url-test,url=http://www.gstatic.com/generate_204,interval=600,tolerance=0,timeout=5,policy-regex-filter=🇺🇸|美国|美國|United States|洛杉矶|圣何塞|西雅图|芝加哥|纽约|达拉斯|凤凰城|硅谷
 ```
 
-正则包含城市名和「沪美」这类机场常用缩写。`policy-select-name` 给业务组设默认出口，例如
+**只认旗帜 emoji、中文、英文全称和城市名，刻意不收 `US` / `SG` / `HK` 这类两字母缩写。**
+
+缩写不可靠：节点叫「🇺🇸 美国 SG 中转」时，加词边界也挡不住那个独立的 `SG`，美国节点会被
+收进 SG 组 —— 这正是踩过的坑（SG 组里混进了 2 个美国节点）。收窄的代价是「US 01」这种
+纯缩写命名不进地区组，但它们仍在 `Proxy` 组里，手动选得到。选错国家比选不到严重得多。
+
+`policy-select-name` 给业务组设默认出口，例如
 `Claude = select,US,Proxy,CN,policy-select-name=US` —— 导入后 Claude 直接走美国组。
 
 `CN` 组默认 `DIRECT`。国内流量不直接写 `DIRECT` 而是走这个组，是为了判定出错时能一键切走。
