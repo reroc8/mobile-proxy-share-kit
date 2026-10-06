@@ -15,6 +15,29 @@
 
 用 ClashMetaForAndroid / FlClash / Stash / Hiddify 的，建议直接改用 Karing：同样是 sing-box 内核、免费、全平台，规则也能和 PC 版共用同一套逻辑，省一份维护成本。
 
+### 为什么其他客户端用不了这两份产物
+
+不是扫码不扫码的问题 —— 是**格式不对**。各家都接受 `xxx://install-config?url=…` 这类导入链接，
+但那是拿来导入**自家格式的完整配置**的：
+
+| 客户端 | 接受的 scheme（查自各项目源码） | 吃什么格式 | 能用这里的产物吗 |
+|---|---|---|---|
+| Shadowrocket | `shadowrocket://` | Surge 风格 `.conf` | ✅ 就是给它做的 |
+| Karing | `karing://` / `clash://` | 订阅配置 + 它自己的分流组 JSON | ✅ 就是给它做的 |
+| ClashMetaForAndroid | `clash://`、`clashmeta://` | Clash YAML | ❌ 没做 Clash 产物 |
+| FlClash | `clash://`、`clashmeta://`、`flclash://` | Clash YAML | ❌ 没做 |
+| Stash | Clash 系 | Clash YAML | ❌ 没做 |
+| Hiddify | `hiddify://`、`sing-box://`、`clash://` 等 | sing-box JSON / Clash YAML | ❌ 没做 |
+
+`karing/karing-diversion-rules.json` 是 Karing 私有的分流组格式，只有 Karing 认；
+`shadowrocket/*.conf` 是 Surge 风格语法，只有 Shadowrocket 这类客户端认。两者都不能当作
+Clash YAML 或 sing-box JSON 喂给别的客户端。
+
+**如果以后要给 Clash 系做**：成本不高 —— PC 版仓库的 `Merge.yaml` 本身就是 Clash 格式
+（`rule-providers` + `rules`），差的是 `proxies` / `proxy-groups`，而手机端 Clash 的
+「覆写 / Override」功能正好只需要这一段。但那是另一个客户端维护成本，目前按「只维护两份产物」
+的约定没做。
+
 手机入口页：<https://reroc8.github.io/mobile-proxy-share-kit/> —— 页面上有二维码，手机扫完会打开一个**只有两个按钮**的精简页（小火箭一键导入 / Karing 下载 JSON），不用在长页面里翻找。
 
 ## 核心目标
