@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.2.7`，维护三份同源产物。
+面向手机端的代理分流规则包。当前 `v0.2.8`，维护三份同源产物。
 
 三份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组名与顺序一致，不会各走各的。
 
@@ -92,7 +92,7 @@ Karing 没有开放导入分流组的 URL Scheme，做不到点一下直接进 A
 三种方式用的是同一个地址：
 
 ```text
-https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf
+https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/%E6%98%9F%E5%90%9B%E5%88%86%E6%B5%81.conf
 ```
 
 然后把自己的节点放进对应策略：
@@ -130,7 +130,7 @@ clash/
 
 shadowrocket/
   Shadowrocket.conf             旧链接兼容，内容同 rules.conf
-  Shadowrocket.full.conf        完整骨架模板（多一段 [Proxy Group]）
+  星君分流.conf                 完整骨架模板（多一段 [Proxy Group]），主入口
   Shadowrocket.rules.conf       纯规则片段
   README.md
 

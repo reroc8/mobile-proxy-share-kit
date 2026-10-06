@@ -21,7 +21,7 @@ Shadowrocket 的规则原来是手工维护的，停在了 v0.1.2 的快照上�
 ----
     shadowrocket/Shadowrocket.rules.conf   纯规则片段（含 [General]）
     shadowrocket/Shadowrocket.conf         同上，旧链接兼容文件
-    shadowrocket/Shadowrocket.full.conf    完整骨架模板（多一段 [Proxy Group]）
+    shadowrocket/星君分流.conf    完整骨架模板（多一段 [Proxy Group]）
 
 用法
 ----
@@ -56,7 +56,9 @@ from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
 OUTPUT_NAMES = (
     "Shadowrocket.rules.conf",
     "Shadowrocket.conf",
-    "Shadowrocket.full.conf",
+    # 主入口用中文名：小火箭的配置列表里显示的就是文件名，叫「Shadowrocket.full」
+    # 和机场给的 WestData / default 混在一起分不清。用户要求带个人标识。
+    "星君分流.conf",
 )
 
 
@@ -442,7 +444,7 @@ def main(argv: list[str]) -> int:
 
     contents = {
         "Shadowrocket.conf": slim,
-        "Shadowrocket.full.conf": full,
+        "星君分流.conf": full,
     }
     outputs = []
     for name in OUTPUT_NAMES:

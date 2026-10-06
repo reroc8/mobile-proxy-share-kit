@@ -18,6 +18,7 @@ import json
 import re
 import subprocess
 import unittest
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -28,7 +29,7 @@ KARING_FILE = REPO_ROOT / "karing" / "karing-diversion-rules.json"
 SHADOWROCKET_FILES = (
     REPO_ROOT / "shadowrocket" / "Shadowrocket.rules.conf",
     REPO_ROOT / "shadowrocket" / "Shadowrocket.conf",
-    REPO_ROOT / "shadowrocket" / "Shadowrocket.full.conf",
+    REPO_ROOT / "shadowrocket" / "星君分流.conf",
 )
 
 # 两个产物必须一致的组顺序。这是「契约」本身：
@@ -397,6 +398,10 @@ class TestVersionsTrackRuleChanges(unittest.TestCase):
     def fingerprint_at(self, tag: str) -> str | None:
         return self.tool.fingerprint(lambda rel: self.tool.read_git(tag, rel))
 
+    def artifacts_present_at(self, tag: str) -> bool:
+        """那个 tag 里能不能取到全部产物文件（产物改过名就会取不到）。"""
+        return all(self.tool.read_git(tag, rel) is not None for rel, _ in self.tool.ARTIFACTS)
+
     def test_consecutive_releases_change_rules(self) -> None:
         if not self.tags:
             self.skipTest("拿不到 git tag（浅克隆？），跳过")
@@ -408,6 +413,10 @@ class TestVersionsTrackRuleChanges(unittest.TestCase):
         self.assertTrue(guarded, f"没有 {self.GUARD_FROM} 之后的 tag")
 
         for older, newer in zip(guarded, guarded[1:]):
+            if not (self.artifacts_present_at(older) and self.artifacts_present_at(newer)):
+                # 那两个版本里至少有一个取不到产物（比如产物后来改过名）——
+                # 没法比内容，跳过，别把"改了名"误报成"内容没变"
+                continue
             before, after = self.fingerprint_at(older), self.fingerprint_at(newer)
             self.assertNotEqual(
                 before,
@@ -444,9 +453,11 @@ class TestDocumentLinks(unittest.TestCase):
         checked = 0
         for relative in self.DOCUMENTS:
             for path in pattern.findall(self.read(relative)):
+                # 文件名可能是中文，URL 里是百分号编码 —— 解码后再对照本机文件
+                resolved = urllib.parse.unquote(path)
                 self.assertTrue(
-                    (REPO_ROOT / path).is_file(),
-                    f"{relative} 指向 {path}，但仓库里没有这个文件",
+                    (REPO_ROOT / resolved).is_file(),
+                    f"{relative} 指向 {path}，但仓库里没有 {resolved}",
                 )
                 checked += 1
         self.assertGreater(checked, 0, "一个 raw 链接都没找到，检查是不是正则失效了")
@@ -496,9 +507,10 @@ class TestDocumentLinks(unittest.TestCase):
             html = self.read(relative)
             match = re.search(r'href="shadowrocket://config/add/([^"]+)"', html)
             self.assertIsNotNone(match, f"{relative} 里没有小火箭一键导入按钮")
+            target = urllib.parse.unquote(match.group(1))
             self.assertTrue(
-                match.group(1).endswith("shadowrocket/Shadowrocket.full.conf"),
-                f"{relative} 的一键导入应指向完整骨架模板，实际是 {match.group(1)}",
+                target.endswith("shadowrocket/星君分流.conf"),
+                f"{relative} 的一键导入应指向完整骨架模板，实际是 {target}",
             )
 
     def test_phone_import_page_offers_both_clients(self) -> None:
@@ -539,7 +551,9 @@ class TestQrCodes(unittest.TestCase):
         payloads = {rel: payload for rel, payload, _ in self.qrcodes}
         payload = payloads["docs/assets/shadowrocket-config-qr.png"]
         self.assertTrue(payload.startswith("shadowrocket://config/add/https://"))
-        self.assertTrue(payload.endswith("shadowrocket/Shadowrocket.full.conf"))
+        # 文件名是中文，URL 里必须是百分号编码 —— 先解码再看末段
+        self.assertTrue(urllib.parse.unquote(payload).endswith("shadowrocket/星君分流.conf"))
+        self.assertNotIn("星君", payload, "URL 里不能出现未编码的中文，iOS 解析会失败")
 
 
 class TestShadowrocketFallback(unittest.TestCase):

@@ -90,6 +90,18 @@ ZIP_NAME="mobile-proxy-share-kit-${VERSION}.zip"
 rm -f "$DIST_DIR/$ZIP_NAME"
 
 cd "$TMP_DIR"
-zip -qr "$DIST_DIR/$ZIP_NAME" .
+# 用 Python 打包，不用 `zip -qr`：产物主入口是中文文件名（星君分流.conf），
+# 而 Info-ZIP 的 zip 不写 UTF-8 标志位，解压方会按本地编码猜 ——
+# macOS 的 unzip 猜成 cp437，文件名直接乱码。Python 的 zipfile 始终带 UTF-8 标志位。
+"$PYTHON_BIN" -c '
+import os, sys, zipfile
+src, out = sys.argv[1], sys.argv[2]
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk(src):
+        dirs.sort()
+        for name in sorted(files):
+            full = os.path.join(root, name)
+            zf.write(full, os.path.relpath(full, src))
+' "$TMP_DIR" "$DIST_DIR/$ZIP_NAME"
 
 echo "完成: $DIST_DIR/$ZIP_NAME"

@@ -1,6 +1,6 @@
 # Shadowrocket 小火箭 AI 风控稳定规则
 
-当前版本：`v0.2.7`
+当前版本：`v0.2.8`
 
 ## 适合谁
 
@@ -40,7 +40,7 @@ https://reroc8.github.io/mobile-proxy-share-kit/import.html
 它直接编码了配置地址，扫完就下载并启用。
 
 ```text
-shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf
+shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/%E6%98%9F%E5%90%9B%E5%88%86%E6%B5%81.conf
 ```
 
 **③ 上面都不行** —— 手动四步：复制模板链接 → Shadowrocket「配置」→ 右上角 `+` → 粘贴 → 下载 →
@@ -68,7 +68,7 @@ shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-
 小白优先导入完整骨架模板：
 
 ```text
-https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.full.conf
+https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/%E6%98%9F%E5%90%9B%E5%88%86%E6%B5%81.conf
 ```
 
 它会声明下面这些策略名字，但不会提供任何节点。导入后仍然要把自己的订阅节点放到对应策略里。
@@ -105,7 +105,7 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocke
 https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.conf
 ```
 
-这个旧链接会继续保留，内容与 `Shadowrocket.rules.conf` 完全一致。新用户建议优先用 `Shadowrocket.full.conf`。
+这个旧链接会继续保留，内容与 `Shadowrocket.rules.conf` 完全一致。新用户建议优先用 `星君分流.conf`。
 
 手机入口页：
 

@@ -27,13 +27,16 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 RAW_BASE = "https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main"
 PAGES_BASE = "https://reroc8.github.io/mobile-proxy-share-kit"
 
-SHADOWROCKET_CONFIG = f"{RAW_BASE}/shadowrocket/Shadowrocket.full.conf"
+# 文件名是中文，URL 里必须百分号编码 —— 未编码的 `星君分流.conf` 会让 iOS 的 URL 解析失败。
+# 小火箭拿到编码后的 URL 去下载，取显示名时会自行解码（这一点待真机确认）。
+SHADOWROCKET_CONFIG = f"{RAW_BASE}/shadowrocket/{quote('星君分流.conf')}"
 SHADOWROCKET_SCHEME = f"shadowrocket://config/add/{SHADOWROCKET_CONFIG}"
 # (输出文件, 二维码内容, 说明)
 # 只做一张：能被小火箭直接扫码导入的配置码。

@@ -47,7 +47,7 @@ TARGETS = (
 # 于是"只改了策略组（比如地区正则）"这种变化会被指纹漏掉，护栏就会放过一个真改动。
 # 这个盲区实际踩到过：修 SG 组误收节点的版本被误判成"与上一版完全相同"。
 ARTIFACTS = (
-    ("shadowrocket/Shadowrocket.full.conf", "conf"),
+    ("shadowrocket/星君分流.conf", "conf"),
     ("karing/karing-diversion-rules.json", "json"),
     ("clash/clash-override.yaml", "conf"),
 )

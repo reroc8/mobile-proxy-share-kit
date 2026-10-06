@@ -65,7 +65,7 @@ ARTIFACTS=(
     "docs/karing/karing-diversion-rules.json"
     "shadowrocket/Shadowrocket.rules.conf"
     "shadowrocket/Shadowrocket.conf"
-    "shadowrocket/Shadowrocket.full.conf"
+    "shadowrocket/星君分流.conf"
     "clash/clash-override.yaml"
 )
 
