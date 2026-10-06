@@ -18,6 +18,19 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.4
+
+- **Shadowrocket 的 Google / YouTube / Telegram / Exchange 四个组改用远程规则集**（`RULE-SET` 引用
+  `blackmatrix7/ios_rule_script`，和 PC 版用的是同一个源），不再手写域名。手写永远追不上：
+  Google 16 → 708 条、YouTube 10 → 199、Telegram 12 → 50、交易所 26 → 209。小火箭原生支持
+  `RULE-SET`，官方推荐配置（LOWERTOP 的 `lazy_group.conf`）就是这么写的。
+- **Claude 和 AI 两个组故意保持手写** —— 这两块我们比公开规则集更全（`Claude.list` 只有 10 行，
+  我们 11 条；OpenAI + Gemini 合计 66 行，我们 AI 组 93 条），是这套产物自己的价值，保持可审计。
+- 规则集是远程依赖：拉不到时那几行失效，流量落到 `FINAL,Proxy` 兜底，不会断网。
+- 测试 42 → 45 条：新增规则集约束（哪几个组允许用规则集、Claude/AI 必须手写、
+  **规则集 URL 必须真拉得到** —— URL 拼错会静默失效，用户不会知道）。
+- **对应 PC 源：`v0.3.34`**
+
 ## v0.2.3
 
 - **修正 Shadowrocket 的兜底策略**：`FINAL,DIRECT` → `FINAL,Proxy`。

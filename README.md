@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.2.3`，维护三份同源产物。
+面向手机端的代理分流规则包。当前 `v0.2.4`，维护三份同源产物。
 
 三份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组名与顺序一致，不会各走各的。
 
@@ -202,7 +202,7 @@ python3 scripts/build-karing-rules.py ~/Desktop/Clash配置/clash-verge-share-ki
 
 取的是 GitHub 源码而不是本机文件，好处是不依赖任何人的机器状态：谁 clone 下来跑出来的产物都一样，也能在 CI 里跑。
 
-- 显式 `DOMAIN-SUFFIX` / `DOMAIN` / `DOMAIN-KEYWORD` 直接搬运。
+- 显式 `DOMAIN-SUFFIX` / `DOMAIN` / `DOMAIN-KEYWORD` 直接搬运。小火箭那份的 Google / YouTube / Telegram / Exchange 四个组改用远程规则集（`RULE-SET`），因为手写追不上公开规则集的规模。
 - PC 端靠 `RULE-SET` 表达的宽泛覆盖，两个脚本各自换算：
   Karing 用内置规则集（`geosite:*` / `geoip:*` / `acl:*`），
   Shadowrocket 展开成显式域名（脚本里的 `RULE_SET_EXPANSION`）。

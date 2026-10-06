@@ -18,6 +18,7 @@ import json
 import re
 import subprocess
 import unittest
+import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -96,7 +97,7 @@ def parse_shadowrocket(path: Path) -> dict[str, list[tuple[str, str, str]]]:
         if not line or current is None:
             continue
         parts = [part.strip() for part in line.split(",")]
-        if len(parts) >= 3 and parts[0].startswith(("DOMAIN", "IP-CIDR")):
+        if len(parts) >= 3 and parts[0].startswith(("DOMAIN", "IP-CIDR", "RULE-SET")):
             sections[current].append((parts[0], parts[1], parts[2]))
     return sections
 
@@ -231,20 +232,31 @@ class TestKaringContent(unittest.TestCase):
 class TestCrossProductAlignment(unittest.TestCase):
     """Karing 不该有 Shadowrocket 没有的域名 —— 两份产物必须同构。"""
 
-    def test_karing_domains_subset_of_shadowrocket(self) -> None:
-        karing = {value for values in karing_domains(load_karing()).values() for value in values}
-        shadowrocket = shadowrocket_domains(parse_shadowrocket(SHADOWROCKET_FILES[1]))
-        self.assertEqual(
-            sorted(karing - shadowrocket),
-            [],
-            "Karing 里有 Shadowrocket 没有的域名，两份产物已经不同构",
-        )
+    def test_hand_written_groups_stay_in_sync(self) -> None:
+        """Claude 和 AI 是两个产物都**手写**的组，内容必须逐条一致。
 
-    def test_domain_rules_present_in_every_shadowrocket_section(self) -> None:
+        其余组小火箭侧改用了远程规则集（Google / YouTube / Telegram / Exchange），
+        内容在别人仓库里，没法逐条比对，只能比组名 —— 那个由顺序测试覆盖。
+        """
+        name_of = {policy: name for name, policy in EXPECTED_ORDER}
+        karing = karing_domains(load_karing())
+        shadowrocket = parse_shadowrocket(SHADOWROCKET_FILES[1])
+        for policy in ("Claude", "AI"):
+            sr_domains = {
+                value.lstrip(".") for kind, value, _ in shadowrocket[policy] if kind.startswith("DOMAIN")
+            }
+            missing = sorted(karing[name_of[policy]] - sr_domains)
+            self.assertEqual(missing, [], f"{policy} 组：Karing 有而小火箭没有的域名 {missing}")
+
+    def test_every_shadowrocket_section_has_rules(self) -> None:
+        """有的段手写域名，有的段引用远程规则集 —— 两者必须有其一，不能空着。"""
         sections = parse_shadowrocket(SHADOWROCKET_FILES[1])
         for name, rules in sections.items():
-            domains = [rule for rule in rules if rule[0].startswith("DOMAIN")]
-            self.assertTrue(domains, f"{name} 段里没有域名规则")
+            covered = any(
+                rule[0].startswith("DOMAIN") or rule[0] in ("RULE-SET",) or rule[0].startswith("IP-CIDR")
+                for rule in rules
+            )
+            self.assertTrue(covered, f"{name} 段里既没有域名规则也没有规则集")
 
     def test_legacy_conf_matches_rules_conf(self) -> None:
         """Shadowrocket.conf 是旧链接兼容文件，必须与 rules.conf 逐字节相同。"""
@@ -519,6 +531,42 @@ class TestShadowrocketFallback(unittest.TestCase):
             finals = [line for line in rules if line.startswith("FINAL,")]
             self.assertEqual(finals, ["FINAL,Proxy"], f"{path.name} 的兜底策略不是走代理")
             self.assertIn("GEOIP,CN,DIRECT", rules, f"{path.name} 少了国内 IP 直连")
+
+
+class TestRemoteRuleSets(unittest.TestCase):
+    """Google / YouTube / Telegram / Exchange 四个组改用远程规则集。
+
+    URL 拼错的话小火箭那一行会**静默失效**（不报错，只是不命中），用户不会知道。
+    所以生成出来就得验证它真拉得到、内容确实是规则集。
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.rule_sets = load_script("build-shadowrocket-rules.py").RULE_SETS
+
+    def test_exactly_the_big_services_use_rule_sets(self) -> None:
+        self.assertEqual(
+            set(self.rule_sets),
+            {"Google", "YouTube", "Telegram", "Exchange"},
+            "改用/新增规则集的组要先想清楚 —— 手写能追上的就没必要引外部依赖",
+        )
+
+    def test_claude_and_ai_stay_hand_written(self) -> None:
+        """这两块是我们自己的价值：Claude.list 只有 10 行、OpenAI+Gemini 66 行，
+        都不如我们手写全。换成规则集是倒退。"""
+        for policy in ("Claude", "AI"):
+            self.assertNotIn(policy, self.rule_sets)
+
+    def test_rule_sets_are_reachable_and_look_like_rule_sets(self) -> None:
+        for policy, urls in self.rule_sets.items():
+            for url in urls:
+                try:
+                    with urllib.request.urlopen(url, timeout=15) as response:
+                        body = response.read().decode("utf-8", "replace")
+                except Exception as error:  # noqa: BLE001
+                    self.skipTest(f"网络不可用，跳过规则集校验：{error}")
+                self.assertIn("DOMAIN", body, f"{url} 拉回来的内容不像规则集")
+                self.assertGreater(len(body.splitlines()), 5, f"{url} 内容过短")
 
 
 class TestShadowrocketOverlay(unittest.TestCase):

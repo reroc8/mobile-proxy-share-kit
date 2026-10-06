@@ -1,6 +1,6 @@
 # Shadowrocket 小火箭 AI 风控稳定规则
 
-当前版本：`v0.2.3`
+当前版本：`v0.2.4`
 
 ## 适合谁
 
@@ -11,7 +11,14 @@
 
 ## 规则从哪来
 
-三份 `.conf` 都由 `scripts/build-shadowrocket-rules.py` 从 PC 版仓库的 GitHub 源码生成，**不要手改**。和 `karing/` 用的是同一个规则源，两边不会再各走各的。
+三份 `.conf` 都由 `scripts/build-shadowrocket-rules.py` 从 PC 版仓库的 GitHub 源码生成，**不要手改**。
+
+结构是**混合**的：
+
+- **Claude / AI 两个组手写域名** —— 这两块我们比公开规则集更全（`Claude.list` 只有 10 行，我们 11 条；OpenAI + Gemini 合计 66 行，我们 AI 组 93 条），而且是我们自己的价值所在，保持可审计。
+- **Google / YouTube / Telegram / Exchange 四个组引用远程规则集**（`RULE-SET`，源是 `blackmatrix7/ios_rule_script`）。手写追不上：Google 16 → 708 条、YouTube 10 → 199、Telegram 12 → 50、交易所 26 → 209。小火箭原生支持这个，官方推荐配置也是这么写的。
+
+规则集是**远程依赖**：在「配置 → 配置文件 → 编辑配置 → 规则集 URL」里可以看到加载状态。拉不到时那几行会失效，流量落到 `FINAL,Proxy` 兜底，不会断网。
 
 PC 靠 `RULE-SET` 表达、Shadowrocket 没有等价写法的部分，在脚本里展开成显式域名（脚本里的 `RULE_SET_EXPANSION`），逐条标注了对应哪个 PC 规则集。
 
@@ -145,7 +152,7 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 
 | PC 版 | Shadowrocket 上怎么处理 |
 |---|---|
-| `RULE-SET,google` | 展开成显式域名（`google.com`、`gmail.com`、`gstatic.com`、`googleapis.com`、`googleusercontent.com`） |
+| `RULE-SET,google` | 也改用远程规则集 `Google.list`（708 条），不再展开 |
 | `RULE-SET,cn-domain` / `applications` | 展开成显式国内站点，另有 `DOMAIN-SUFFIX,cn` 和 `DOMAIN-KEYWORD,-cn`，末尾还有 `GEOIP,CN,DIRECT` |
 | `RULE-SET,global-domain` / `tld-proxy` | 展开成显式海外站点 |
 | `RULE-SET,cn-ip` / `private-ip` | 由 `GEOIP,CN,DIRECT` 和开头的 `IP-CIDR` 覆盖 |

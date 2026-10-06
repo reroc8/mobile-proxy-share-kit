@@ -122,6 +122,29 @@ LOCAL_RULES = (
     ("IP-CIDR", "192.168.0.0/16"),
 )
 
+# 这四个组改用远程规则集，不再手写域名。
+#
+# 手写永远追不上：Google 手写 16 条 vs 规则集 708 条、YouTube 10 vs 199、
+# Telegram 12 vs 50、交易所 26 vs 209。小火箭原生支持 RULE-SET 引用远程规则集
+# （`配置 > 配置文件 > 编辑配置 > 规则集 URL` 可以看到加载状态），官方推荐配置
+# （LOWERTOP 的 lazy_group.conf）就是这么写的。
+#
+# **Claude 和 AI 两个组故意不换**：Claude.list 只有 10 行，我们手写 11 条还多一点；
+# OpenAI 45 + Gemini 21 = 66 行，也不如我们 AI 组的 93 条全 —— 这两块是我们自己的价值，
+# 保持手写、可审计。
+#
+# 规则集来自 blackmatrix7/ios_rule_script，和 PC 版用的是同一个源（PC 用它做 google / global-domain）。
+RULE_SET_BASE = (
+    "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket"
+)
+RULE_SETS = {
+    "Google": (f"{RULE_SET_BASE}/Google/Google.list",),
+    "YouTube": (f"{RULE_SET_BASE}/YouTube/YouTube.list",),
+    "Telegram": (f"{RULE_SET_BASE}/Telegram/Telegram.list",),
+    # Crypto 是 blackmatrix7 的加密货币分类，比我们的交易所清单宽（含行情站、钱包、DeFi）
+    "Exchange": (f"{RULE_SET_BASE}/Crypto/Crypto.list",),
+}
+
 # Telegram 官方 IP 段，对应 PC 的 RULE-SET,telegramcidr。
 TELEGRAM_CIDR = (
     "91.108.4.0/22",
@@ -313,12 +336,19 @@ def render_rules(
             lines.append(f"{rule_type},{value},DIRECT{suffix}")
 
     for policy in OUTPUT_ORDER:
-        body = rules[policy]
-        if not body:
-            raise BuildError(f"{policy} 策略没有任何规则，检查 Merge.yaml 是否还包含对应策略")
         lines.append(f"# {policy}")
-        for rule_type, value in body:
-            lines.append(f"{rule_type},{value},{policy}")
+        remote_sets = RULE_SETS.get(policy, ())
+        for url in remote_sets:
+            lines.append(f"RULE-SET,{url},{policy}")
+
+        body = rules[policy]
+        if not body and not remote_sets:
+            raise BuildError(f"{policy} 策略没有任何规则，检查 Merge.yaml 是否还包含对应策略")
+        # 用了规则集的组不再写手写域名：规则集已经覆盖得更全，重复写只是噪音
+        if not remote_sets:
+            for rule_type, value in body:
+                lines.append(f"{rule_type},{value},{policy}")
+
         if policy == "Telegram":
             for cidr in TELEGRAM_CIDR:
                 lines.append(f"IP-CIDR,{cidr},Telegram,no-resolve")
