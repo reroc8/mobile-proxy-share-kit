@@ -1,6 +1,6 @@
 # Shadowrocket 小火箭 AI 风控稳定规则
 
-当前版本：`v0.2.5`
+当前版本：`v0.2.6`
 
 ## 适合谁
 
@@ -17,6 +17,10 @@
 
 - **Claude / AI 两个组手写域名** —— 这两块我们比公开规则集更全（`Claude.list` 只有 10 行，我们 11 条；OpenAI + Gemini 合计 66 行，我们 AI 组 93 条），而且是我们自己的价值所在，保持可审计。
 - **Google / YouTube / Telegram / Exchange 四个组引用远程规则集**（`RULE-SET`，源是 `blackmatrix7/ios_rule_script`）。手写追不上：Google 16 → 708 条、YouTube 10 → 199、Telegram 12 → 50、交易所 26 → 209。小火箭原生支持这个，官方推荐配置也是这么写的。
+- **`Banks` / `Brokers` 引用规则集**（LingJingMaster 的，blackmatrix7 没有金融类）。
+- **`CN` 和 `Proxy` 各加了两层兜底**：`China.list` + `China_Domain.list`（3699 条）把国内域名逐条兜住；`Global.list` + `Global_Domain.list`（**34922 条**）把海外域名兜住。纯域名列表用 `DOMAIN-SET`，带类型的用 `RULE-SET`。
+
+加了这几层之后，**实际覆盖从约 1550 条涨到约 38000 条** —— 只看文件行数会觉得少（175 行），因为绝大多数规则藏在十几条规则集引用后面。
 
 规则集是**远程依赖**：在「配置 → 配置文件 → 编辑配置 → 规则集 URL」里可以看到加载状态。拉不到时那几行会失效，流量落到 `FINAL,Proxy` 兜底，不会断网。
 

@@ -18,6 +18,20 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.6
+
+- **补上国内 / 海外的域名兜底层**。原来国内域名只靠 `GEOIP,CN` 按 IP 判断，海外域名只靠
+  `FINAL,Proxy` 兜底 —— 一个国内域名如果解析到海外 IP（用了海外 CDN），会被送进代理，
+  慢且可能触发该服务的异地登录风控。现在：
+  - `CN` 组加 `China.list` + `China_Domain.list`（3699 条），国内域名逐条兜住；
+  - `Proxy` 组加 `Global.list` + `Global_Domain.list`（**34922 条**），海外域名兜住。
+  - 纯域名列表用 `DOMAIN-SET`（不带规则类型），带类型的用 `RULE-SET`。
+- **实际覆盖从约 1550 条涨到约 38000 条**。文件本身只有 175 行 —— 绝大多数规则藏在
+  十几条规则集引用后面，别被行数骗了。同类项目里机场那几千条规则，来源就是 `Global_Domain`。
+- 这一层的做法来自 `LingJingMaster/Shadowrocket-Rules`（它引用了同样四个 China/Global 规则集）。
+- 测试 41 → 42 条：新增「纯域名列表必须用 `DOMAIN-SET`」的约束。
+- **对应 PC 源：`v0.3.35`**
+
 ## v0.2.5
 
 - **地区组改成自动筛节点**：`US` / `SG` 改用 `url-test` + `policy-regex-filter`，

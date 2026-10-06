@@ -145,21 +145,34 @@ LOCAL_RULES = (
 RULE_SET_BASE = (
     "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Shadowrocket"
 )
+# (规则类型, URL)。带类型的规则集用 RULE-SET；纯域名列表用 DOMAIN-SET ——
+# 后者体积大得多（China_Domain 3699 条、Global_Domain **34922 条**），
+# 小火箭对纯域名列表有专门处理，用 DOMAIN-SET 比 RULE-SET 省。
 RULE_SETS = {
-    "Google": (f"{RULE_SET_BASE}/Google/Google.list",),
-    "YouTube": (f"{RULE_SET_BASE}/YouTube/YouTube.list",),
-    "Telegram": (f"{RULE_SET_BASE}/Telegram/Telegram.list",),
+    "Google": (("RULE-SET", f"{RULE_SET_BASE}/Google/Google.list"),),
+    "YouTube": (("RULE-SET", f"{RULE_SET_BASE}/YouTube/YouTube.list"),),
+    "Telegram": (("RULE-SET", f"{RULE_SET_BASE}/Telegram/Telegram.list"),),
     # Crypto 是 blackmatrix7 的加密货币分类，比我们的交易所清单宽（含行情站、钱包、DeFi）
-    "Exchange": (f"{RULE_SET_BASE}/Crypto/Crypto.list",),
+    "Exchange": (("RULE-SET", f"{RULE_SET_BASE}/Crypto/Crypto.list"),),
     # 银行 / 券商：blackmatrix7 没有金融类规则集，用 LingJingMaster 的。
-    # 覆盖香港银行 38 条 + 券商 107 条 —— 这类业务最怕出口地区乱跳触发风控，
-    # 单独建组就是为了把出口钉住。拉不到时这两组为空、不参与匹配，不影响其他流量。
+    # 这类业务最怕出口地区乱跳触发风控，单独建组就是为了把出口钉住。
     "Banks": (
-        "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Banks_Direct.list",
-        "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HSBC_HK.list",
+        ("RULE-SET", "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Banks_Direct.list"),
+        ("RULE-SET", "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HSBC_HK.list"),
     ),
     "Brokers": (
-        "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Broker.list",
+        ("RULE-SET", "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Broker.list"),
+    ),
+    # 国内兜底：把国内域名逐条兜住，不再只靠 GEOIP,CN 按 IP 猜。
+    # 少这一层的后果：国内域名解析到海外 IP（用了海外 CDN）时会被送进代理，慢且可能触发异地登录风控。
+    "CN": (
+        ("RULE-SET", f"{RULE_SET_BASE}/China/China.list"),
+        ("DOMAIN-SET", f"{RULE_SET_BASE}/China/China_Domain.list"),
+    ),
+    # 海外兜底：Global_Domain 有 34922 条，是机场那些几千条规则的来源。
+    "Proxy": (
+        ("RULE-SET", f"{RULE_SET_BASE}/Global/Global.list"),
+        ("DOMAIN-SET", f"{RULE_SET_BASE}/Global/Global_Domain.list"),
     ),
 }
 
@@ -359,8 +372,8 @@ def render_rules(rules: dict[str, list[tuple[str, str]]]) -> list[str]:
     for policy in OUTPUT_ORDER:
         lines.append(f"# {policy}")
         remote_sets = RULE_SETS.get(policy, ())
-        for url in remote_sets:
-            lines.append(f"RULE-SET,{url},{policy}")
+        for kind, url in remote_sets:
+            lines.append(f"{kind},{url},{policy}")
 
         body = rules[policy]
         if not body and not remote_sets:

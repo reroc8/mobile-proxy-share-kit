@@ -573,12 +573,25 @@ class TestRemoteRuleSets(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.rule_sets = load_script("build-shadowrocket-rules.py").RULE_SETS
 
-    def test_exactly_the_big_services_use_rule_sets(self) -> None:
+    def test_exactly_the_expected_groups_use_rule_sets(self) -> None:
         self.assertEqual(
             set(self.rule_sets),
-            {"Google", "YouTube", "Telegram", "Exchange", "Banks", "Brokers"},
+            {"Google", "YouTube", "Telegram", "Exchange", "Banks", "Brokers", "CN", "Proxy"},
             "改用/新增规则集的组要先想清楚 —— 手写能追上的就没必要引外部依赖",
         )
+
+    def test_domain_lists_use_domain_set(self) -> None:
+        """纯域名列表必须用 DOMAIN-SET 而不是 RULE-SET。
+
+        China_Domain 3699 条、Global_Domain 34922 条 —— 它们是纯域名、不带规则类型，
+        只有 DOMAIN-SET 能吃；用 RULE-SET 会解析失败。
+        """
+        for policy, entries in self.rule_sets.items():
+            for kind, url in entries:
+                if url.endswith("_Domain.list"):
+                    self.assertEqual(kind, "DOMAIN-SET", f"{policy} 的 {url} 应该用 DOMAIN-SET")
+                else:
+                    self.assertEqual(kind, "RULE-SET", f"{policy} 的 {url} 应该用 RULE-SET")
 
     def test_claude_and_ai_stay_hand_written(self) -> None:
         """这两块是我们自己的价值：Claude.list 只有 10 行、OpenAI+Gemini 66 行，
