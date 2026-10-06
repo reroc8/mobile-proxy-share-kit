@@ -501,6 +501,68 @@ class TestQrCodes(unittest.TestCase):
         self.assertTrue(payload.endswith("shadowrocket/Shadowrocket.full.conf"))
 
 
+class TestShadowrocketFallback(unittest.TestCase):
+    """小火箭的兜底必须走代理，不能照抄 PC 版的 MATCH,DIRECT。
+
+    PC 版前面有 global-domain 规则集兜住海外域名，最后那条 MATCH 只兜极小一部分；
+    手机端没有那个规则集，同样的兜底会变成「没列出的墙外站全走直连、打不开」
+    —— Wikipedia / IMDb / Bloomberg 这类全部中招。宁可国内小众站稍慢。
+    """
+
+    def test_fallback_goes_through_proxy(self) -> None:
+        for path in SHADOWROCKET_FILES:
+            rules = [
+                line.strip()
+                for line in path.read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.startswith("#") and not line.startswith("[")
+            ]
+            finals = [line for line in rules if line.startswith("FINAL,")]
+            self.assertEqual(finals, ["FINAL,Proxy"], f"{path.name} 的兜底策略不是走代理")
+            self.assertIn("GEOIP,CN,DIRECT", rules, f"{path.name} 少了国内 IP 直连")
+
+
+class TestShadowrocketOverlay(unittest.TestCase):
+    """叠加片段是给「已经有完整机场配置」的人用的，必须只叠加、不接管。
+
+    机场那份配置自带节点、DNS 设置和几千条通用规则。用我们的整份配置替换会把这些全丢掉，
+    所以这份片段：不含 [General]（别覆盖人家的 DNS/隧道设置）、不含局域网段和兜底
+    （人家本来就有）、不含任何节点。
+    """
+
+    PATH = REPO_ROOT / "shadowrocket" / "Shadowrocket.overlay.conf"
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.text = cls.PATH.read_text(encoding="utf-8")
+        cls.rules = [
+            line.strip()
+            for line in cls.text.splitlines()
+            if line.strip() and not line.startswith("#") and not line.startswith("[")
+        ]
+
+    def test_does_not_clobber_existing_general_settings(self) -> None:
+        self.assertNotIn("[General]", self.text, "叠加片段不能带 [General]，会覆盖机场的 DNS/隧道设置")
+
+    def test_leaves_fallback_to_the_existing_config(self) -> None:
+        joined = " ".join(self.rules)
+        for marker in ("FINAL,", "GEOIP,CN,DIRECT"):
+            self.assertNotIn(
+                marker,
+                joined,
+                f"叠加片段不该自己带兜底（{marker}），用户配置里已经有了",
+            )
+
+    def test_still_carries_groups_and_rules(self) -> None:
+        self.assertIn("[Proxy Group]", self.text)
+        self.assertGreater(len(self.rules), 100, "叠加片段里规则太少，检查生成逻辑")
+        self.assertIn("DOMAIN-SUFFIX,claude.ai,Claude", self.rules)
+
+    def test_contains_no_proxy_nodes(self) -> None:
+        """片段只带策略组和规则，节点由用户自己的订阅/机场配置提供。"""
+        self.assertNotIn("[Proxy]", self.text)
+        self.assertNotIn("trojan", self.text)
+
+
 class TestClashProduct(unittest.TestCase):
     """Clash 覆写产物：与另外两份同源、同组名、同规则目标。
 

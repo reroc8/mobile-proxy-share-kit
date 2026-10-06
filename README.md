@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.2.2`，维护三份同源产物。
+面向手机端的代理分流规则包。当前 `v0.2.3`，维护三份同源产物。
 
 三份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组名与顺序一致，不会各走各的。
 
@@ -56,7 +56,7 @@ Karing 用它的自定义分流组 JSON，小火箭用 Surge 风格 `.conf`，Cl
 - 不提供节点，不替代机场订阅。
 - 不保证绕过任何平台的账号地区限制。
 - 不做系统级去广告。
-- 不追求全网所有站点都代理，未命中规则默认直连。
+- 不追求全网所有站点都代理，但兜底走代理（见各产物说明）。
 
 ## Karing 快速使用
 
@@ -295,7 +295,7 @@ https://github.com/reroc8/mobile-proxy-share-kit/releases
 - 不使用一个泛用 `Proxy` 承接所有海外服务。
 - 不使用广告拦截规则。
 - AI 规则放在 Google / YouTube / 通用代理规则前面。
-- 最终兜底为直连，避免没识别的网站被强行送进普通代理。
+- 最终兜底为代理，避免没识别的墙外站直接打不开；国内靠 GEOIP/规则集单独兜住。
 
 ## 安全原则
 

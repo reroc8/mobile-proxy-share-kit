@@ -57,6 +57,24 @@ OUTPUT_NAMES = (
     "Shadowrocket.rules.conf",
     "Shadowrocket.conf",
     "Shadowrocket.full.conf",
+    "Shadowrocket.overlay.conf",
+)
+
+# 叠加片段：给「已经有完整机场配置」的用户用。
+# 机场那份配置自带节点和几千条规则，直接换成我们的会丢掉节点和覆盖；
+# 正确的用法是把这段插进他们现有的配置里。所以它不含 [General]（别覆盖人家的 DNS/隧道设置），
+# 也不含局域网段和兜底（人家本来就有），只留策略组和规则。
+OVERLAY_HEADER = (
+    "# Mobile Proxy Share Kit — 叠加片段（Shadowrocket）",
+    "#",
+    "# 给「已经有完整机场配置」的人用：不要用这份替换你现在的配置，而是插进去。",
+    "# 你那份配置里的节点、DNS、几千条通用规则都保留，只是让 AI 相关流量改走独立分组。",
+    "#",
+    "# 用法：",
+    "#   1. 把下面的 [Proxy Group] 整段复制到你配置里 [Rule] 段之前（没有就加在文件末尾的规则段前）。",
+    "#   2. 把 [Rule] 里的规则行复制到你配置 [Rule] 段的最前面 —— 顺序要紧，插在后面就不生效了。",
+    "#   3. 到策略组里把 US / SG 两组填上你自己的节点（其余组会自动引用它们）。",
+    "#   4. 确认你原来的兜底（FINAL,PROXY）保持不变。",
 )
 
 # PC 策略名 -> Shadowrocket 策略名。US / SG 在两个产物里都是独立策略组。
@@ -284,11 +302,15 @@ def collect(entries: list[tuple[str, str, str]]) -> dict[str, list[tuple[str, st
     return rules
 
 
-def render_rules(rules: dict[str, list[tuple[str, str]]]) -> list[str]:
-    lines = ["[Rule]", "# LAN / local"]
-    for rule_type, value in LOCAL_RULES:
-        suffix = ",no-resolve" if rule_type == "IP-CIDR" else ""
-        lines.append(f"{rule_type},{value},DIRECT{suffix}")
+def render_rules(
+    rules: dict[str, list[tuple[str, str]]], include_fallback: bool = True
+) -> list[str]:
+    lines = ["[Rule]"]
+    if include_fallback:
+        lines.append("# LAN / local")
+        for rule_type, value in LOCAL_RULES:
+            suffix = ",no-resolve" if rule_type == "IP-CIDR" else ""
+            lines.append(f"{rule_type},{value},DIRECT{suffix}")
 
     for policy in OUTPUT_ORDER:
         body = rules[policy]
@@ -301,9 +323,19 @@ def render_rules(rules: dict[str, list[tuple[str, str]]]) -> list[str]:
             for cidr in TELEGRAM_CIDR:
                 lines.append(f"IP-CIDR,{cidr},Telegram,no-resolve")
 
-    lines.append("# 国内 IP 直连，然后保守兜底")
+    if not include_fallback:
+        return lines
+
+    # 国内 IP 直连，其余兜底走代理。
+    #
+    # 这里**不能**照抄 PC 版的 MATCH,DIRECT：PC 版前面有 global-domain 规则集兜住海外域名，
+    # 最后那条 MATCH 只兜极小一部分；手机端没有那个规则集，同样的兜底会变成
+    # 「没列出的墙外站全走直连、打不开」——Wikipedia / IMDb / Bloomberg 这些都会中招。
+    # 宁可国内小众站稍慢，也不要墙外站打不开。
+    lines.append("# 国内 IP 直连")
     lines.append("GEOIP,CN,DIRECT")
-    lines.append("FINAL,DIRECT")
+    lines.append("# 其余走代理兜底（不要改成 DIRECT，理由见生成脚本注释）")
+    lines.append("FINAL,Proxy")
     return lines
 
 
@@ -311,13 +343,18 @@ def render(
     rules: dict[str, list[tuple[str, str]]],
     include_proxy_group: bool,
     source_version: str | None,
+    overlay: bool = False,
 ) -> str:
-    body = build_header(source_version)
-    body += ["", *GENERAL]
+    version = source_version or "unknown"
+    if overlay:
+        body = list(OVERLAY_HEADER) + [f"# Source: {SOURCE_REPO} {version}"]
+    else:
+        body = build_header(source_version)
+        body += ["", *GENERAL]
     if include_proxy_group:
         body += ["", *PROXY_GROUP]
     body += [""]
-    body += render_rules(rules)
+    body += render_rules(rules, include_fallback=not overlay)
     return "\n".join(body) + "\n"
 
 
@@ -334,11 +371,16 @@ def main(argv: list[str]) -> int:
         source_version = fetch_source_version(source)
         slim = render(rules, include_proxy_group=False, source_version=source_version)
         full = render(rules, include_proxy_group=True, source_version=source_version)
+        overlay = render(rules, include_proxy_group=True, source_version=source_version, overlay=True)
     except BuildError as error:
         print(f"错误: {error}", file=sys.stderr)
         return 1
 
-    contents = {"Shadowrocket.conf": slim, "Shadowrocket.full.conf": full}
+    contents = {
+        "Shadowrocket.conf": slim,
+        "Shadowrocket.full.conf": full,
+        "Shadowrocket.overlay.conf": overlay,
+    }
     outputs = []
     for name in OUTPUT_NAMES:
         # rules.conf 与 .conf 是同一份内容，.conf 只为兼容旧链接存在

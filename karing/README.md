@@ -1,6 +1,6 @@
 # Karing 分流规则
 
-当前版本：`v0.2.2`
+当前版本：`v0.2.3`
 
 ## 适合谁
 
@@ -54,7 +54,7 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/karing/kari
 Karing 的「分流规则」页才是真正决定流量去哪的地方，JSON 只提供了分组和域名。
 
 1. **打开「自定义分流组」开关**，并把它排在 `final` 之前。
-2. **把 `final` 设为直连**。这是兜底，和 PC 版的 `MATCH,DIRECT` 一致：没命中的站点直连，避免国内 `.com` 小站被误送进代理。
+2. **把 `final` 设为代理**。没命中的站点走代理兜底 —— 宁可国内小众站稍慢，也不要墙外站打不开。国内域名和 IP 由 `🏠 国内直连` 组先兜住，不会受影响。
 3. **逐组设置出站**。JSON 里给的是开箱可用的默认值：
    - `🤖 Claude` / `🧠 国际 AI` / `🎬 YouTube` / `🌐 Google` / `💱 交易所` / `✈️ Telegram` / `🇺🇸 美国` / `🇸🇬 新加坡` / `🚀 代理` → 当前选择（`currentSelected`）
    - `🏠 国内直连` → 直连（`direct`）
@@ -109,7 +109,7 @@ PC 版里按地区写死的域名现在都有了独立分组，不用再从别�
 | `RULE-SET,cn-ip` / `private-ip` | `acl:ChinaIp` |
 | `RULE-SET,global-domain` / `tld-proxy` | `geosite:geolocation-!cn` |
 | `RULE-SET,telegramcidr` | `geoip:telegram` |
-| `RULE-SET,apple` / `icloud` | 不建组，兜底就是直连 |
+| `RULE-SET,apple` / `icloud` | 不建组，按内置规则集与 IP 归属走 |
 | `PROCESS-NAME-REGEX` 进程级规则（钉钉、Muse） | 自定义分流组虽然支持进程名，但只在 PC 生效、名字要装完才知道，不预置 |
 | `RULE-SET,applications,DIRECT` | 同上，属于按本机应用配置的事 |
 | 交易所分组 | **手机端独有**，PC 版没有这块业务 |

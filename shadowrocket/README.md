@@ -1,6 +1,6 @@
 # Shadowrocket 小火箭 AI 风控稳定规则
 
-当前版本：`v0.2.2`
+当前版本：`v0.2.3`
 
 ## 适合谁
 
@@ -44,6 +44,24 @@ shadowrocket://config/add/https://raw.githubusercontent.com/reroc8/mobile-proxy-
 - 这个 scheme 形式不是官方开发者文档里的，来源是同类规则项目的实际做法
   （`Johnshall/Shadowrocket-ADBlock-Rules-Forever` 的二维码解码出来就是同样的
   `shadowrocket://config/add/https://...`）。所以手动路径一直保留着。
+
+## 已经有完整配置（机场自带的那种）？用叠加片段
+
+如果你的配置是机场给的 `.conf`，**里面已经内嵌了节点和几千条规则** —— 用上面那份骨架去替换它，
+节点和覆盖会一起丢掉。这种情况改用叠加片段：
+
+```text
+https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocket/Shadowrocket.overlay.conf
+```
+
+它不含 `[General]`、不含局域网段、不含兜底，也不含任何节点，只带策略组和 AI 规则。做法：
+
+1. 把里面的 `[Proxy Group]` 整段，复制到你配置里 `[Rule]` 段**之前**。
+2. 把 `[Rule]` 里的规则行，复制到你配置 `[Rule]` 段的**最前面** —— 顺序要紧，插在后面就不生效。
+3. 到策略组里给 `US` / `SG` 两组填上你自己的节点。
+4. 你原来的 `FINAL,PROXY` 保持不变。
+
+这样：机场原有的几千条规则和节点全部保留，只有 AI 相关流量改走独立分组。
 
 ## 手动导入（一键失败时用）
 
@@ -113,7 +131,7 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 9. 国内 AI 服务、钉钉、腾讯系，以及国内常见网站直连。
 10. 明确海外常见服务命中 `Proxy`。
 11. 中国大陆 IP 直连。
-12. 未命中规则默认直连。
+12. 未命中规则走 `Proxy`（**兜底走代理，不是直连**，理由见下）。
 
 顺序不能乱，有两条硬要求：
 
@@ -131,7 +149,7 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 | `RULE-SET,cn-domain` / `applications` | 展开成显式国内站点，另有 `DOMAIN-SUFFIX,cn` 和 `DOMAIN-KEYWORD,-cn`，末尾还有 `GEOIP,CN,DIRECT` |
 | `RULE-SET,global-domain` / `tld-proxy` | 展开成显式海外站点 |
 | `RULE-SET,cn-ip` / `private-ip` | 由 `GEOIP,CN,DIRECT` 和开头的 `IP-CIDR` 覆盖 |
-| `RULE-SET,apple` / `icloud` | 不单列，兜底就是直连 |
+| `RULE-SET,apple` / `icloud` | 不单列；Apple 域名按 IP 归属走（国内 CDN 直连、海外走代理） |
 | `PROCESS-NAME-REGEX` 进程级规则（钉钉、Muse） | 小火箭没有进程名匹配，不预置 |
 | 交易所分组 | **手机端独有**，PC 版没有这块业务 |
 

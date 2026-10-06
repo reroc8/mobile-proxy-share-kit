@@ -18,6 +18,21 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.3
+
+- **修正 Shadowrocket 的兜底策略**：`FINAL,DIRECT` → `FINAL,Proxy`。
+  这是从 PC 版照抄 `MATCH,DIRECT` 时抄错了前提 —— PC 版前面有 `global-domain` 规则集兜住海外域名，
+  最后那条 MATCH 只兜极小一部分；手机端没有那个规则集，同样的兜底会让**所有没列出的墙外站直接打不开**
+  （Wikipedia、IMDb、Bloomberg、Quora、Medium、Archive.org、WSJ… 全部中招）。
+  现在国内 IP 仍由 `GEOIP,CN,DIRECT` 兜住，其余走代理。宁可国内小众站稍慢。
+- **新增 `shadowrocket/Shadowrocket.overlay.conf`（叠加片段）**。原来三份 Shadowrocket 产物都是
+  「替换用」的完整配置；但很多人手上的机场配置**自带节点和几千条规则**，替换它们会丢掉节点和覆盖。
+  这份片段只含 `[Proxy Group]` + 规则，不含 `[General]`、不含局域网段和兜底，专门用来**插进**
+  现有配置里 —— 保留对方的一切，只让 AI 流量改走独立分组。
+- `karing/README.md` 的 `final` 建议也同步改成「代理」：没命中的站点走代理兜底，国内由
+  `🏠 国内直连` 组先兜住。
+- 测试 38 → 42 条：新增兜底策略与叠加片段的约束（叠加片段不得带 `[General]`、不得自带兜底、不得含节点）。
+
 ## v0.2.2
 
 - **新增 `clash/` 产物**，覆盖 ClashMetaForAndroid / FlClash / Stash 这类 mihomo 内核客户端。
