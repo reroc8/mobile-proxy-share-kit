@@ -79,7 +79,9 @@ OVERLAY_HEADER = (
 
 # PC 策略名 -> Shadowrocket 策略名。US / SG 在两个产物里都是独立策略组。
 TARGET_MAP = {
-    "DIRECT": "DIRECT",
+    # 国内流量不再直接写 DIRECT，改成指向 CN 组 —— 组里默认还是 DIRECT，
+    # 但万一某条规则判错，用户能一键切走（同类项目 LingJingMaster 也这么做）。
+    "DIRECT": "CN",
     "Claude": "Claude",
     "AI": "AI",
     "Google": "Google",
@@ -105,11 +107,34 @@ OUTPUT_ORDER = (
     "Google",
     "Exchange",
     "Telegram",
+    "Banks",
+    "Brokers",
     "US",
     "SG",
-    "DIRECT",
+    "CN",
     "Proxy",
 )
+
+# 地区识别正则，写给策略组的 policy-regex-filter。
+# 参考同类项目（LingJingMaster/Shadowrocket-Rules、IvanSolis1989/Smart-Config-Kit）的写法：
+# 机场常用城市名或「沪美」这类缩写命名节点，所以要把它们一并写进去。
+# 刻意**不用单字**（如「美」「港」）—— 会误匹配到别的词。
+REGION_FILTERS = {
+    "US": "🇺🇸|美国|美國|US|USA|United States|洛杉矶|圣何塞|西雅图|芝加哥|纽约|达拉斯|凤凰城",
+    "SG": "🇸🇬|新加坡|狮城|SG|Singapore",
+    "HK": "🇭🇰|香港|深港|沪港|京港|HK|Hong Kong|Hongkong",
+}
+
+# 细分的地区组（只为别的组提供出口，自己不带规则）
+REGION_ONLY = ("HK",)
+
+# 地区组一律用 url-test 自动筛节点 —— 用户不用手动往里拖节点。
+# policy-select-name 设默认选中项（小火箭手册第 968 行有官方示例）。
+def region_group(name: str) -> str:
+    return (
+        f"{name} = url-test,url=http://www.gstatic.com/generate_204,interval=600,"
+        f"tolerance=0,timeout=5,policy-regex-filter={REGION_FILTERS[name]}"
+    )
 
 # LAN / 本地地址直连。Shadowrocket 独有的写法，PC 靠 private-domain / private-ip 规则集。
 LOCAL_RULES = (
@@ -143,6 +168,16 @@ RULE_SETS = {
     "Telegram": (f"{RULE_SET_BASE}/Telegram/Telegram.list",),
     # Crypto 是 blackmatrix7 的加密货币分类，比我们的交易所清单宽（含行情站、钱包、DeFi）
     "Exchange": (f"{RULE_SET_BASE}/Crypto/Crypto.list",),
+    # 银行 / 券商：blackmatrix7 没有金融类规则集，用 LingJingMaster 的。
+    # 覆盖香港银行 38 条 + 券商 107 条 —— 这类业务最怕出口地区乱跳触发风控，
+    # 单独建组就是为了把出口钉住。拉不到时这两组为空、不参与匹配，不影响其他流量。
+    "Banks": (
+        "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Banks_Direct.list",
+        "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HSBC_HK.list",
+    ),
+    "Brokers": (
+        "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Broker.list",
+    ),
 }
 
 # Telegram 官方 IP 段，对应 PC 的 RULE-SET,telegramcidr。
@@ -265,15 +300,21 @@ GENERAL = (
 # 先声明 Proxy，后面各策略都引用它
 PROXY_GROUP = (
     "[Proxy Group]",
-    "Proxy = select, DIRECT",
-    "Claude = select, Proxy",
-    "AI = select, Proxy",
-    "Google = select, Proxy",
-    "YouTube = select, Proxy",
-    "Exchange = select, Proxy",
-    "Telegram = select, Proxy",
-    "US = select, Proxy",
-    "SG = select, Proxy",
+    # 通用出口：内置 PROXY 指「当前选中的节点」，再挂上地区组方便直接选某地
+    "Proxy = select,PROXY,DIRECT,US,SG,HK",
+    "CN = select,DIRECT,Proxy,policy-select-name=DIRECT",
+    region_group("US"),
+    region_group("SG"),
+    region_group("HK"),
+    # 业务组：默认指到合适的地区组，用户可以随时改
+    "Claude = select,US,Proxy,CN,policy-select-name=US",
+    "AI = select,US,SG,Proxy,CN,policy-select-name=US",
+    "YouTube = select,Proxy,US,SG,CN",
+    "Google = select,Proxy,US,SG,CN",
+    "Exchange = select,SG,HK,Proxy,CN",
+    "Telegram = select,Proxy,US,SG,CN",
+    "Banks = select,DIRECT,HK,Proxy,policy-select-name=DIRECT",
+    "Brokers = select,HK,US,Proxy,policy-select-name=HK",
 )
 
 
@@ -362,8 +403,9 @@ def render_rules(
     # 最后那条 MATCH 只兜极小一部分；手机端没有那个规则集，同样的兜底会变成
     # 「没列出的墙外站全走直连、打不开」——Wikipedia / IMDb / Bloomberg 这些都会中招。
     # 宁可国内小众站稍慢，也不要墙外站打不开。
-    lines.append("# 国内 IP 直连")
-    lines.append("GEOIP,CN,DIRECT")
+    # 国内 IP 也走 CN 组（组里默认 DIRECT），和其他国内规则保持一致 —— 判定错了能一键切走
+    lines.append("# 国内 IP")
+    lines.append("GEOIP,CN,CN")
     lines.append("# 其余走代理兜底（不要改成 DIRECT，理由见生成脚本注释）")
     lines.append("FINAL,Proxy")
     return lines

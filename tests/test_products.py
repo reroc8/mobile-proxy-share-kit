@@ -51,6 +51,27 @@ EXPECTED_ORDER = (
 # 「宽泛」策略：必须排在所有精确策略之后
 BROAD_POLICIES = ("DIRECT", "Proxy")
 
+# Shadowrocket 自己的组顺序。它比另外两份多出 HK / CN / Banks / Brokers ——
+# 小火箭有 policy-regex-filter 这种别家没有的能力，按能力做足，不强行三份同构。
+# （HK 只在 [Proxy Group] 里，[Rule] 段不出现，所以不在这张表里。）
+SHADOWROCKET_ORDER = (
+    "Claude",
+    "AI",
+    "YouTube",
+    "Google",
+    "Exchange",
+    "Telegram",
+    "Banks",
+    "Brokers",
+    "US",
+    "SG",
+    "CN",
+    "Proxy",
+)
+
+# Shadowrocket 侧的宽泛策略：CN（国内，默认直连，可切）和 Proxy（兜底走代理）
+SHADOWROCKET_BROAD = ("CN", "Proxy")
+
 # Karing 内置规则集白名单。名字写错不会报错、只会静默不匹配，所以在这里钉死。
 # 来源：KaringX/karing 仓库 assets/datas/preset/{default,cn}.json 的实测值。
 KNOWN_BUILD_IN_PREFIXES = ("geosite:", "geoip:", "acl:")
@@ -82,6 +103,10 @@ def load_karing() -> dict:
     return json.loads(KARING_FILE.read_text(encoding="utf-8"))
 
 
+# Shadowrocket 用到的全部策略名（HK 只在 [Proxy Group] 里，不在 [Rule] 段）
+SHADOWROCKET_POLICIES = set(SHADOWROCKET_ORDER) | {"HK"}
+
+
 def parse_shadowrocket(path: Path) -> dict[str, list[tuple[str, str, str]]]:
     """把 .conf 按 `# 策略名` 注释切段，返回 {策略名: [(类型, 值, 目标)]}。"""
     sections: dict[str, list[tuple[str, str, str]]] = {}
@@ -90,7 +115,7 @@ def parse_shadowrocket(path: Path) -> dict[str, list[tuple[str, str, str]]]:
         line = raw.strip()
         if line.startswith("#"):
             marker = line.lstrip("#").strip()
-            current = marker if marker in {name for _, name in EXPECTED_ORDER} else None
+            current = marker if marker in SHADOWROCKET_POLICIES else None
             if current:
                 sections[current] = []
             continue
@@ -135,7 +160,7 @@ class TestOrderContract(unittest.TestCase):
             sections = parse_shadowrocket(path)
             self.assertEqual(
                 list(sections),
-                [name for _, name in EXPECTED_ORDER],
+                list(SHADOWROCKET_ORDER),
                 f"{path.name} 的策略段落顺序不符合契约",
             )
 
@@ -153,14 +178,18 @@ class TestOrderContract(unittest.TestCase):
     def test_exact_policies_before_broad_ones(self) -> None:
         """PC 里 tgalileo.com 同时在 cn 域名库中，靠精确规则前置才能改走代理。"""
         to_policy = {name: policy for name, policy in EXPECTED_ORDER}
-        orderings = {
-            "Karing": [to_policy[group["name"]] for group in load_karing()["rules"]],
-            "Shadowrocket": list(parse_shadowrocket(SHADOWROCKET_FILES[1])),
+        checks = {
+            "Karing": (
+                [to_policy[group["name"]] for group in load_karing()["rules"]],
+                BROAD_POLICIES,
+            ),
+            "Shadowrocket": (list(parse_shadowrocket(SHADOWROCKET_FILES[1])), SHADOWROCKET_BROAD),
         }
-        exact = [policy for _, policy in EXPECTED_ORDER if policy not in BROAD_POLICIES]
-        for product, ordering in orderings.items():
-            broad_start = min(ordering.index(policy) for policy in BROAD_POLICIES)
-            for policy in exact:
+        for product, (ordering, broad) in checks.items():
+            broad_start = min(ordering.index(policy) for policy in broad)
+            for policy in ordering:
+                if policy in broad:
+                    continue
                 self.assertLess(
                     ordering.index(policy),
                     broad_start,
@@ -530,7 +559,7 @@ class TestShadowrocketFallback(unittest.TestCase):
             ]
             finals = [line for line in rules if line.startswith("FINAL,")]
             self.assertEqual(finals, ["FINAL,Proxy"], f"{path.name} 的兜底策略不是走代理")
-            self.assertIn("GEOIP,CN,DIRECT", rules, f"{path.name} 少了国内 IP 直连")
+            self.assertIn("GEOIP,CN,CN", rules, f"{path.name} 少了国内 IP 规则")
 
 
 class TestRemoteRuleSets(unittest.TestCase):
@@ -547,7 +576,7 @@ class TestRemoteRuleSets(unittest.TestCase):
     def test_exactly_the_big_services_use_rule_sets(self) -> None:
         self.assertEqual(
             set(self.rule_sets),
-            {"Google", "YouTube", "Telegram", "Exchange"},
+            {"Google", "YouTube", "Telegram", "Exchange", "Banks", "Brokers"},
             "改用/新增规则集的组要先想清楚 —— 手写能追上的就没必要引外部依赖",
         )
 
@@ -593,7 +622,7 @@ class TestShadowrocketOverlay(unittest.TestCase):
 
     def test_leaves_fallback_to_the_existing_config(self) -> None:
         joined = " ".join(self.rules)
-        for marker in ("FINAL,", "GEOIP,CN,DIRECT"):
+        for marker in ("FINAL,", "GEOIP,CN,CN"):
             self.assertNotIn(
                 marker,
                 joined,

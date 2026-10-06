@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.2.4`，维护三份同源产物。
+面向手机端的代理分流规则包。当前 `v0.2.5`，维护三份同源产物。
 
 三份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组名与顺序一致，不会各走各的。
 

@@ -18,6 +18,23 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.5
+
+- **地区组改成自动筛节点**：`US` / `SG` 改用 `url-test` + `policy-regex-filter`，
+  用户不用再手动往里拖节点。新增 `HK` 组。正则参考同类项目写法，含城市名和机场常用缩写。
+  业务组用 `policy-select-name` 设默认出口（`Claude` 导入即走美国组）。
+- **新增 `Banks` / `Brokers` 两个分组**（香港银行 → 直连、券商 → 香港出口）。
+  银行和券商最怕出口地区乱跳触发风控，单独建组把出口钉住。规则集用 `LingJingMaster` 的
+  （blackmatrix7 没有金融类），覆盖香港银行 38 条 + 券商 107 条。
+- **国内流量不再直接写 `DIRECT`**，改走 `CN` 组（组里默认仍是直连）。
+  判定出错时用户能一键切走 —— 同类项目 LingJingMaster 也这么做。`GEOIP,CN` 一并改指向 `CN`。
+- **Shadowrocket 不再和 Karing / Clash 逐组对齐**。小火箭有 `policy-regex-filter` 这类别家没有的
+  能力，按自己的能力做足，组数 10 → 13。用户已确认「单软件攻破」的判断。
+- 以上做法来自调研 6 个**仍在维护**的同类项目（Johnshall 30.8k / LOWERTOP-Shadowrocket-First 5.5k /
+  LingJingMaster 1.1k / Smart-Config-Kit / misha-tgshv / TutuBetterRules）。
+  反面例子：`h2y/Shadowrocket-ADBlock-Rules` 有 16.7k star 但 **2021 年已停更**。
+- **对应 PC 源：`v0.3.34`**
+
 ## v0.2.4
 
 - **Shadowrocket 的 Google / YouTube / Telegram / Exchange 四个组改用远程规则集**（`RULE-SET` 引用

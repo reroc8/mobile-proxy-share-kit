@@ -1,6 +1,6 @@
 # Shadowrocket 小火箭 AI 风控稳定规则
 
-当前版本：`v0.2.4`
+当前版本：`v0.2.5`
 
 ## 适合谁
 
@@ -95,8 +95,10 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocke
 | `YouTube` | 看视频稳定的节点 |
 | `Exchange` | 台湾、新加坡节点 |
 | `Telegram` | 常用稳定节点 |
-| `US` | 只放美国节点（`mail.com`、`lexmount.com`、`muse` 系） |
-| `SG` | 只放新加坡节点（`dola.com`） |
+| `US` | **自动筛**美国节点（不用手动放） |
+| `SG` | **自动筛**新加坡节点 |
+| `HK` | **自动筛**香港节点 |
+| `CN` | 国内流量，默认直连 |
 | `Proxy` | 普通代理节点 |
 
 ## 高级用法
@@ -124,6 +126,19 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/shadowrocke
 ```text
 https://reroc8.github.io/mobile-proxy-share-kit/
 ```
+
+## 地区组是自动的
+
+`US` / `SG` / `HK` 三个组用 `policy-regex-filter` 按节点名里的地区字样**自动收节点**，你不需要手动往里拖：
+
+```
+US = url-test,url=http://www.gstatic.com/generate_204,interval=600,tolerance=0,timeout=5,policy-regex-filter=🇺🇸|美国|US|USA|United States|洛杉矶|圣何塞|西雅图|芝加哥|纽约|达拉斯|凤凰城
+```
+
+正则包含城市名和「沪美」这类机场常用缩写。`policy-select-name` 给业务组设默认出口，例如
+`Claude = select,US,Proxy,CN,policy-select-name=US` —— 导入后 Claude 直接走美国组。
+
+`CN` 组默认 `DIRECT`。国内流量不直接写 `DIRECT` 而是走这个组，是为了判定出错时能一键切走。
 
 ## 规则顺序
 
@@ -157,6 +172,7 @@ https://reroc8.github.io/mobile-proxy-share-kit/
 | `RULE-SET,global-domain` / `tld-proxy` | 展开成显式海外站点 |
 | `RULE-SET,cn-ip` / `private-ip` | 由 `GEOIP,CN,DIRECT` 和开头的 `IP-CIDR` 覆盖 |
 | `RULE-SET,apple` / `icloud` | 不单列；Apple 域名按 IP 归属走（国内 CDN 直连、海外走代理） |
+| 银行 / 券商 | **手机端独有**，PC 版没有这两组 |
 | `PROCESS-NAME-REGEX` 进程级规则（钉钉、Muse） | 小火箭没有进程名匹配，不预置 |
 | 交易所分组 | **手机端独有**，PC 版没有这块业务 |
 
