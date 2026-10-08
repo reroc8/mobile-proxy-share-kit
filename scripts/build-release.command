@@ -68,7 +68,7 @@ fi
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/karing" "$TMP_DIR/clash" "$TMP_DIR/docs/assets" "$TMP_DIR/docs/karing" "$TMP_DIR/scripts" "$TMP_DIR/tests"
+mkdir -p "$DIST_DIR" "$TMP_DIR/shadowrocket" "$TMP_DIR/karing" "$TMP_DIR/clash" "$TMP_DIR/hiddify" "$TMP_DIR/docs/assets" "$TMP_DIR/docs/karing" "$TMP_DIR/scripts" "$TMP_DIR/tests"
 cp "$ROOT_DIR/README.md" "$TMP_DIR/README.md"
 cp "$ROOT_DIR/VERSION.txt" "$TMP_DIR/VERSION.txt"
 cp "$ROOT_DIR/CHANGELOG.md" "$TMP_DIR/CHANGELOG.md"
@@ -77,6 +77,7 @@ cp "$ROOT_DIR/shadowrocket/"*.conf "$TMP_DIR/shadowrocket/"
 cp "$ROOT_DIR/karing/README.md" "$TMP_DIR/karing/README.md"
 cp "$ROOT_DIR/karing/"*.json "$TMP_DIR/karing/"
 cp "$ROOT_DIR/clash/"* "$TMP_DIR/clash/"
+cp "$ROOT_DIR/hiddify/"* "$TMP_DIR/hiddify/"
 # 整目录复制，别再逐个列文件名 —— 之前就漏过新增的脚本
 cp "$ROOT_DIR/scripts/"* "$TMP_DIR/scripts/"
 mkdir -p "$TMP_DIR/tests"

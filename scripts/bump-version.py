@@ -50,6 +50,7 @@ ARTIFACTS = (
     ("shadowrocket/星君分流.conf", "conf"),
     ("karing/karing-diversion-rules.json", "json"),
     ("clash/clash-override.yaml", "conf"),
+    ("hiddify/hiddify-route-rules.json", "json"),
 )
 
 

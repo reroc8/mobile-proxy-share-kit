@@ -1,6 +1,6 @@
 # Mobile Proxy Share Kit
 
-面向手机端的代理分流规则包。当前 `v0.2.9`，维护三份同源产物。
+面向手机端的代理分流规则包。当前 `v0.2.10`，维护三份同源产物。
 
 三份产物的规则内容都从 PC 版仓库 [`reroc8/clash-verge-share-kit`](https://github.com/reroc8/clash-verge-share-kit) 的 `Merge.yaml` 生成，分组名与顺序一致，不会各走各的。
 
@@ -17,8 +17,10 @@
 三份同源：同一套域名、同一套分组名。区别只在格式和加载方式 ——
 Karing 用它的自定义分流组 JSON，小火箭用 Surge 风格 `.conf`，Clash 系直接用覆写。
 
-用 Hiddify / sing-box 官方客户端的暂时没有产物（要的是 sing-box JSON），
-可以先改用上面任何一个。
+`hiddify/` 那份有个硬限制要说清：Hiddify 规则的 `outbound` 是枚举，只有
+`proxy` / `direct` / `direct_with_fragment` / `block` 四个值，**没有节点组的概念**。
+所以它能精确判断「哪些域名走代理」，但**做不到「Claude 走美国、AI 走别的」**。
+要出口隔离就用 `shadowrocket/` 或 `clash/`。
 
 ### 各家客户端吃什么格式
 
@@ -29,7 +31,7 @@ Karing 用它的自定义分流组 JSON，小火箭用 Surge 风格 `.conf`，Cl
 | ClashMetaForAndroid | `clash://`、`clashmeta://` | Clash YAML | `clash/`（当覆写用） |
 | FlClash | `clash://`、`clashmeta://`、`flclash://` | Clash YAML / 覆写脚本 | `clash/`（当覆写用） |
 | Stash | Clash 系 | Clash YAML | `clash/`（当覆写用） |
-| Hiddify | `hiddify://`、`sing-box://`、`clash://` 等 | sing-box JSON / Clash YAML | 暂无 |
+| Hiddify | `hiddify://`、`sing-box://`、`clash://` 等 | sing-box JSON / Clash YAML | `hiddify/`（**只能表达走不走代理，无出口分组**） |
 
 注意各家的 `xxx://install-config?url=` 都是拿来导入**自家格式的完整配置**的，
 而这里的产物是**规则**（不含节点），所以 Clash 系那份是配 「覆写 / Override」用的，

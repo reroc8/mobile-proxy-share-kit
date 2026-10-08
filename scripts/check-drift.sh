@@ -21,7 +21,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 RULES_SOURCE="${RULES_SOURCE:-}"
 
-for script in mobile_rules.py build-karing-rules.py build-shadowrocket-rules.py build-clash-rules.py; do
+for script in mobile_rules.py build-karing-rules.py build-shadowrocket-rules.py build-clash-rules.py build-hiddify-rules.py; do
     if [ ! -f "$ROOT_DIR/scripts/$script" ]; then
         echo "错误: 缺少 scripts/$script"
         exit 1
@@ -54,6 +54,7 @@ if [ "$FIX" -eq 1 ]; then
     run_builder build-karing-rules.py
     run_builder build-shadowrocket-rules.py
     run_builder build-clash-rules.py
+    run_builder build-hiddify-rules.py
     echo
 fi
 
@@ -67,6 +68,8 @@ ARTIFACTS=(
     "shadowrocket/Shadowrocket.conf"
     "shadowrocket/星君分流.conf"
     "clash/clash-override.yaml"
+    "hiddify/hiddify-route-rules.json"
+    "hiddify/import-link.txt"
 )
 
 if ! run_builder build-karing-rules.py --out-dir "$TMP_DIR" >/dev/null; then
@@ -79,6 +82,10 @@ if ! run_builder build-shadowrocket-rules.py --out-dir "$TMP_DIR" >/dev/null; th
 fi
 if ! run_builder build-clash-rules.py --out-dir "$TMP_DIR" >/dev/null; then
     echo "错误: Clash 产物生成失败，先解决上面的报错"
+    exit 1
+fi
+if ! run_builder build-hiddify-rules.py --out-dir "$TMP_DIR" >/dev/null; then
+    echo "错误: Hiddify 产物生成失败，先解决上面的报错"
     exit 1
 fi
 

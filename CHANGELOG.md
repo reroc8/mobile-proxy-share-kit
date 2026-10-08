@@ -18,6 +18,28 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.10
+
+- **新增第四份产物 `hiddify/`**，覆盖 Hiddify（sing-box 内核）。
+  格式抄自 Hiddify 自己的导出函数（`rules_notifier.dart` 的 `exportJsonToClipboard`）：
+
+  ```text
+  hiddify:///settings/routing-options?routeRule=<base64(JSON)>
+  ```
+
+  点这个链接，或复制后在 Hiddify 里选「从剪贴板导入」。
+- **一条硬限制必须说清**：Hiddify 规则的 `outbound` 是枚举，只有
+  `proxy` / `direct` / `direct_with_fragment` / `block` 四个值（见 `route_rule.proto`），
+  **没有节点组的概念**。所以这份只能表达「走不走代理」，
+  **做不到「Claude 走美国」** —— 那是 Shadowrocket / Clash 才有的能力。
+  这份里的「组」只影响规则的组织与开关，不影响出口。
+- 这一轮是**搭框架**：规则来自 PC 规则源，9 组。银行 / 券商没做 ——
+  它们在 PC 规则源里不存在，要引入额外数据源（另外三份是引 LingJingMaster 的）。
+  海外域名兜底（`Global_Domain` 那种三万条量级）也还没接。
+- 测试 48 → 54 条：JSON 结构、outbound 必须在枚举内、`list_order` 连续、
+  **导入链接里的 base64 解开必须等于规则文件**（否则用户导入的是旧规则）。
+- **对应 PC 源：`v0.3.35`**
+
 ## v0.2.9
 
 把前面几轮在 Shadowrocket 上验证过的做法同步到另外两份产物。

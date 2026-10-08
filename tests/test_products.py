@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import re
 import subprocess
@@ -666,6 +667,65 @@ class TestRemoteRuleSets(unittest.TestCase):
                     self.skipTest(f"网络不可用，跳过规则集校验：{error}")
                 self.assertIn("DOMAIN", body, f"{url} 拉回来的内容不像规则集")
                 self.assertGreater(len(body.splitlines()), 5, f"{url} 内容过短")
+
+
+class TestHiddifyProduct(unittest.TestCase):
+    """Hiddify 那份：规则 JSON + 一条一键导入链接。
+
+    格式抄自 hiddify-app 自己的导出函数（rules_notifier.dart 的 exportJsonToClipboard）：
+        hiddify:///settings/routing-options?routeRule=<base64(JSON)>
+    字段定义在 android/app/src/main/protos/v2/config/route_rule.proto。
+    """
+
+    RULES = REPO_ROOT / "hiddify" / "hiddify-route-rules.json"
+    LINK = REPO_ROOT / "hiddify" / "import-link.txt"
+    # route_rule.proto 里 Outbound 只有这四个值
+    ALLOWED_OUTBOUNDS = {"proxy", "direct", "direct_with_fragment", "block"}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.doc = json.loads(cls.RULES.read_text(encoding="utf-8"))
+        cls.link = cls.LINK.read_text(encoding="utf-8").strip()
+
+    def test_document_shape(self) -> None:
+        self.assertEqual(list(self.doc), ["rules"])
+        self.assertGreater(len(self.doc["rules"]), 5)
+        for rule in self.doc["rules"]:
+            self.assertTrue(rule["enabled"])
+            self.assertIn(rule["outbound"], self.ALLOWED_OUTBOUNDS)
+            self.assertTrue(
+                any(rule.get(key) for key in ("domain", "domain_suffix", "domain_keyword")),
+                f"{rule['name']} 没有任何域名规则",
+            )
+
+    def test_only_outbounds_the_proto_defines(self) -> None:
+        """别写出 proxy 以外的花活 —— Hiddify 的 outbound 是枚举，写别的会解析失败。"""
+        used = {rule["outbound"] for rule in self.doc["rules"]}
+        self.assertTrue(used <= self.ALLOWED_OUTBOUNDS, f"出现了未定义的值：{used}")
+
+    def test_list_order_is_sequential_from_one(self) -> None:
+        """Hiddify 按 list_order 匹配 —— 顺序错了分流就错。"""
+        self.assertEqual(
+            [rule["list_order"] for rule in self.doc["rules"]],
+            list(range(1, len(self.doc["rules"]) + 1)),
+        )
+
+    def test_claude_comes_before_the_broad_groups(self) -> None:
+        names = [rule["name"] for rule in self.doc["rules"]]
+        self.assertLess(names.index("🤖 Claude"), names.index("🏠 国内直连"))
+        self.assertLess(names.index("🧠 国际 AI"), names.index("🚀 代理"))
+
+    def test_import_link_matches_the_json(self) -> None:
+        """链接里的 base64 解开必须就是这个 JSON —— 不一致的话用户导入的是旧规则。"""
+        prefix = "hiddify:///settings/routing-options?routeRule="
+        self.assertTrue(self.link.startswith(prefix), "导入链接的格式不对")
+        decoded = base64.b64decode(self.link[len(prefix):]).decode("utf-8")
+        self.assertEqual(json.loads(decoded), self.doc)
+
+    def test_domestic_group_is_direct(self) -> None:
+        domestic = [rule for rule in self.doc["rules"] if rule["name"] == "🏠 国内直连"]
+        self.assertEqual(len(domestic), 1)
+        self.assertEqual(domestic[0]["outbound"], "direct")
 
 
 class TestClashProduct(unittest.TestCase):
