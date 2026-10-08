@@ -11,53 +11,77 @@ proxy-groups:
     proxies:
       - US
       - Proxy
-      - DIRECT
+      - CN
   - name: AI
     type: select
     proxies:
       - US
       - SG
       - Proxy
-      - DIRECT
+      - CN
   - name: YouTube
     type: select
     proxies:
       - Proxy
       - US
       - SG
-      - DIRECT
+      - CN
   - name: Google
     type: select
     proxies:
       - Proxy
       - US
       - SG
-      - DIRECT
+      - CN
   - name: Exchange
     type: select
     proxies:
       - SG
+      - HK
       - Proxy
-      - DIRECT
+      - CN
   - name: Telegram
     type: select
     proxies:
       - Proxy
       - US
       - SG
+      - CN
+  - name: Banks
+    type: select
+    proxies:
       - DIRECT
+      - HK
+      - Proxy
+  - name: Brokers
+    type: select
+    proxies:
+      - HK
+      - US
+      - Proxy
   - name: US
     type: select
     include-all: true
-    filter: "(?i)(美国|美國|United States|(^|[^A-Za-z])US([^A-Za-z]|$)|(^|[^A-Za-z])USA([^A-Za-z]|$)|🇺🇸)"
+    filter: "(?i)(🇺🇸|美国|美國|United States|洛杉矶|圣何塞|西雅图|芝加哥|纽约|达拉斯|凤凰城|硅谷)"
     proxies:
       - DIRECT
   - name: SG
     type: select
     include-all: true
-    filter: "(?i)(新加坡|Singapore|(^|[^A-Za-z])SG([^A-Za-z]|$)|🇸🇬)"
+    filter: "(?i)(🇸🇬|新加坡|狮城|Singapore)"
     proxies:
       - DIRECT
+  - name: HK
+    type: select
+    include-all: true
+    filter: "(?i)(🇭🇰|香港|深港|沪港|京港|广港|Hong Kong|Hongkong)"
+    proxies:
+      - DIRECT
+  - name: CN
+    type: select
+    proxies:
+      - DIRECT
+      - Proxy
   - name: Proxy
     type: select
     include-all: true
@@ -149,15 +173,39 @@ rule-providers:
     proxy: Proxy
 
 # ── 分流规则 ──
+  hk-banks:
+    type: http
+    behavior: classical
+    format: text
+    url: "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Banks_Direct.list"
+    path: ./ruleset/hk-banks.txt
+    interval: 86400
+    proxy: Proxy
+  hsbc-hk:
+    type: http
+    behavior: classical
+    format: text
+    url: "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HSBC_HK.list"
+    path: ./ruleset/hsbc-hk.txt
+    interval: 86400
+    proxy: Proxy
+  hk-brokers:
+    type: http
+    behavior: classical
+    format: text
+    url: "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main/HK_Broker.list"
+    path: ./ruleset/hk-brokers.txt
+    interval: 86400
+    proxy: Proxy
 
 rules:
   # 局域网和私有地址直连
-  - RULE-SET,private-domain,DIRECT
+  - RULE-SET,private-domain,CN
   - RULE-SET,private-ip,DIRECT,no-resolve
   # 钉钉进程级强制直连：置于所有业务精确规则之前，钉钉全家桶（DingTalk、
   # DingMeeting 等）的任何连接都不会被后面的精确域名/规则集抢先送进代理。
   # 已知取舍：钉钉内置浏览器打开 Claude/AI 等需代理站点时同样直连（无法加载）。
-  - PROCESS-NAME-REGEX,(?i)ding(talk|meeting),DIRECT
+  - PROCESS-NAME-REGEX,(?i)ding(talk|meeting),CN
   # WorkBuddy AI 国际版海外遥测：sg.tgalileo.com 解析到腾讯云新加坡（43.156.86.0/24），
   # 但该域在 cn-domain 规则集里（+.tgalileo.com），按常规会被判为国内直连。前置精确
   # 规则改走代理。取舍：遥测 SNI 由「对 ISP 可见」变为「对代理节点可见」，并非消除；
@@ -301,61 +349,61 @@ rules:
   - DOMAIN-SUFFIX,together.xyz,AI
   # Mainland China AI services should stay DIRECT, not use the international AI group.
   # Some use .com / .ai / .chat domains, so keep them before the broad global rules.
-  - DOMAIN-SUFFIX,deepseek.com,DIRECT
-  - DOMAIN-SUFFIX,kimi.ai,DIRECT
-  - DOMAIN-SUFFIX,moonshot.cn,DIRECT
-  - DOMAIN-SUFFIX,doubao.com,DIRECT
-  - DOMAIN-SUFFIX,volcengine.com,DIRECT
-  - DOMAIN-SUFFIX,volces.com,DIRECT
-  - DOMAIN-SUFFIX,qwen.ai,DIRECT
-  - DOMAIN-SUFFIX,tongyi.aliyun.com,DIRECT
-  - DOMAIN-SUFFIX,dashscope.aliyuncs.com,DIRECT
-  - DOMAIN-SUFFIX,modelscope.cn,DIRECT
-  - DOMAIN-SUFFIX,yiyan.baidu.com,DIRECT
-  - DOMAIN-SUFFIX,wenxin.baidu.com,DIRECT
-  - DOMAIN-SUFFIX,aistudio.baidu.com,DIRECT
-  - DOMAIN-SUFFIX,baidubce.com,DIRECT
-  - DOMAIN-SUFFIX,yuanbao.tencent.com,DIRECT
-  - DOMAIN-SUFFIX,hunyuan.tencent.com,DIRECT
-  - DOMAIN-SUFFIX,hunyuan.cloud.tencent.com,DIRECT
-  - DOMAIN-SUFFIX,tencentcloudapi.com,DIRECT
-  - DOMAIN-SUFFIX,chatglm.cn,DIRECT
-  - DOMAIN-SUFFIX,zhipuai.cn,DIRECT
-  - DOMAIN-SUFFIX,bigmodel.cn,DIRECT
-  - DOMAIN-SUFFIX,minimax.chat,DIRECT
-  - DOMAIN-SUFFIX,minimax.io,DIRECT
-  - DOMAIN-SUFFIX,hailuoai.com,DIRECT
-  - DOMAIN-SUFFIX,xfyun.cn,DIRECT
-  - DOMAIN-SUFFIX,sparkdesk.cn,DIRECT
-  - DOMAIN-SUFFIX,360.com,DIRECT
-  - DOMAIN-SUFFIX,360.cn,DIRECT
-  - DOMAIN-SUFFIX,baichuan-ai.com,DIRECT
-  - DOMAIN-SUFFIX,baichuan-ai.cn,DIRECT
-  - DOMAIN-SUFFIX,01.ai,DIRECT
-  - DOMAIN-SUFFIX,lingyiwanwu.com,DIRECT
-  - DOMAIN-SUFFIX,stepfun.com,DIRECT
-  - DOMAIN-SUFFIX,stepchat.cn,DIRECT
-  - DOMAIN-SUFFIX,sensenova.cn,DIRECT
-  - DOMAIN-SUFFIX,sensecore.cn,DIRECT
-  - DOMAIN-SUFFIX,sensetime.com,DIRECT
-  - DOMAIN-SUFFIX,metaso.cn,DIRECT
-  - DOMAIN-SUFFIX,metaso.com,DIRECT
+  - DOMAIN-SUFFIX,deepseek.com,CN
+  - DOMAIN-SUFFIX,kimi.ai,CN
+  - DOMAIN-SUFFIX,moonshot.cn,CN
+  - DOMAIN-SUFFIX,doubao.com,CN
+  - DOMAIN-SUFFIX,volcengine.com,CN
+  - DOMAIN-SUFFIX,volces.com,CN
+  - DOMAIN-SUFFIX,qwen.ai,CN
+  - DOMAIN-SUFFIX,tongyi.aliyun.com,CN
+  - DOMAIN-SUFFIX,dashscope.aliyuncs.com,CN
+  - DOMAIN-SUFFIX,modelscope.cn,CN
+  - DOMAIN-SUFFIX,yiyan.baidu.com,CN
+  - DOMAIN-SUFFIX,wenxin.baidu.com,CN
+  - DOMAIN-SUFFIX,aistudio.baidu.com,CN
+  - DOMAIN-SUFFIX,baidubce.com,CN
+  - DOMAIN-SUFFIX,yuanbao.tencent.com,CN
+  - DOMAIN-SUFFIX,hunyuan.tencent.com,CN
+  - DOMAIN-SUFFIX,hunyuan.cloud.tencent.com,CN
+  - DOMAIN-SUFFIX,tencentcloudapi.com,CN
+  - DOMAIN-SUFFIX,chatglm.cn,CN
+  - DOMAIN-SUFFIX,zhipuai.cn,CN
+  - DOMAIN-SUFFIX,bigmodel.cn,CN
+  - DOMAIN-SUFFIX,minimax.chat,CN
+  - DOMAIN-SUFFIX,minimax.io,CN
+  - DOMAIN-SUFFIX,hailuoai.com,CN
+  - DOMAIN-SUFFIX,xfyun.cn,CN
+  - DOMAIN-SUFFIX,sparkdesk.cn,CN
+  - DOMAIN-SUFFIX,360.com,CN
+  - DOMAIN-SUFFIX,360.cn,CN
+  - DOMAIN-SUFFIX,baichuan-ai.com,CN
+  - DOMAIN-SUFFIX,baichuan-ai.cn,CN
+  - DOMAIN-SUFFIX,01.ai,CN
+  - DOMAIN-SUFFIX,lingyiwanwu.com,CN
+  - DOMAIN-SUFFIX,stepfun.com,CN
+  - DOMAIN-SUFFIX,stepchat.cn,CN
+  - DOMAIN-SUFFIX,sensenova.cn,CN
+  - DOMAIN-SUFFIX,sensecore.cn,CN
+  - DOMAIN-SUFFIX,sensetime.com,CN
+  - DOMAIN-SUFFIX,metaso.cn,CN
+  - DOMAIN-SUFFIX,metaso.com,CN
   # 钉钉域名直连：服务于浏览器等非钉钉进程访问钉钉站点
   # （钉钉进程自身已由顶部的 PROCESS-NAME-REGEX 规则全覆盖）
-  - DOMAIN-SUFFIX,dingtalk.com,DIRECT
-  - DOMAIN-SUFFIX,dingtalkcdn.com,DIRECT
-  - DOMAIN-SUFFIX,lwurl.to,DIRECT
+  - DOMAIN-SUFFIX,dingtalk.com,CN
+  - DOMAIN-SUFFIX,dingtalkcdn.com,CN
+  - DOMAIN-SUFFIX,lwurl.to,CN
   # 自定义直连：放在宽泛代理规则前，避免被后续规则集抢先命中
-  - DOMAIN,codebuddy.cn,DIRECT
-  - DOMAIN,copilot.tencent.com,DIRECT
+  - DOMAIN,codebuddy.cn,CN
+  - DOMAIN,copilot.tencent.com,CN
   # Apple / iCloud
   # Apple 被墙域名走代理
   - DOMAIN,gateway.icloud.com,Proxy
   - DOMAIN,gs.apple.com,Proxy
   - DOMAIN-SUFFIX,developer.apple.com,Proxy
   - DOMAIN,setup.icloud.com,Proxy
-  - RULE-SET,apple,DIRECT
-  - RULE-SET,icloud,DIRECT
+  - RULE-SET,apple,CN
+  - RULE-SET,icloud,CN
   # 用户自定义：mail.com 强制走美国
   - DOMAIN-SUFFIX,mail.com,US
   # YouTube
@@ -387,14 +435,18 @@ rules:
   - RULE-SET,telegramcidr,Telegram,no-resolve
   # Business rules stay first. Generic application bypass only runs before the
   # domestic/global base layers, so AI and exchange routing keep priority.
-  - RULE-SET,applications,DIRECT
+  - RULE-SET,applications,CN
   # 国内基础规则优先于通用海外规则，降低国内 .com 小站误走代理的概率
-  - RULE-SET,cn-domain,DIRECT
+  - RULE-SET,cn-domain,CN
   - RULE-SET,cn-ip,DIRECT,no-resolve
   # 海外域名由 blackmatrix7 Global_Domain 补漏
   - RULE-SET,global-domain,Proxy
   # 国外顶级域名
   - RULE-SET,tld-proxy,Proxy
+  # 银行 / 券商（手机端独有分组，最怕出口地区乱跳触发风控）
+  - RULE-SET,hk-banks,Banks
+  - RULE-SET,hsbc-hk,Banks
+  - RULE-SET,hk-brokers,Brokers
   # 交易所（手机端独有分组）
   - DOMAIN-SUFFIX,okx.com,Exchange
   - DOMAIN-SUFFIX,okx-dns.com,Exchange
@@ -423,4 +475,4 @@ rules:
   - DOMAIN-SUFFIX,bitstamp.net,Exchange
   - DOMAIN-SUFFIX,upbit.com,Exchange
   # 最终兜底：未知站点直连，避免国内 .com 被误送代理导致 502
-  - MATCH,DIRECT
+  - MATCH,CN

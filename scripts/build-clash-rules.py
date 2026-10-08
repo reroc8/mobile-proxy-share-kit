@@ -45,14 +45,33 @@ from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
 
 OUTPUT_SUFFIX = Path("clash") / "clash-override.yaml"
 
+# 银行 / 券商的远程规则集。blackmatrix7 没有金融类，用 LingJingMaster 的。
+# 它们是纯文本的 Surge 风格 .list（每行 `DOMAIN,xxx`），所以要 behavior: classical + format: text ——
+# mihomo 的 rule-providers 默认按 YAML 解析，不加 format 会读不出来。
+LINGJING = "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main"
+FINANCE_PROVIDERS = {
+    "hk-banks": (f"{LINGJING}/HK_Banks_Direct.list", "Banks"),
+    "hsbc-hk": (f"{LINGJING}/HSBC_HK.list", "Banks"),
+    "hk-brokers": (f"{LINGJING}/HK_Broker.list", "Brokers"),
+}
+
 # PC 的策略名 -> 手机端统一的策略名。其余同名。
-TARGET_RENAME = {"Proxies": "Proxy"}
+TARGET_RENAME = {
+    "Proxies": "Proxy",
+    # 国内流量不再直接写 DIRECT，改指向 CN 组（组里默认还是 DIRECT），
+    # 万一某条规则判错，用户能一键切走。与 Shadowrocket 那份一致。
+    "DIRECT": "CN",
+}
 
 # 地区识别正则，直接取自 PC 版 config/Script.js 的 regionPatterns，
 # 保证两边认出来的节点是同一批。
+# 只认旗帜 emoji / 中文 / 英文全称 / 城市名，**不收两字母缩写**。
+# 和 Shadowrocket 那份口径一致：缩写不可靠 —— 节点叫「🇺🇸 美国 SG 中转」时，
+# 那个 SG 是独立的词，加词边界照样命中，美国节点会被 SG 组收走（真机报过）。
 REGION_FILTERS = {
-    "US": r"(?i)(美国|美國|United States|(^|[^A-Za-z])US([^A-Za-z]|$)|(^|[^A-Za-z])USA([^A-Za-z]|$)|🇺🇸)",
-    "SG": r"(?i)(新加坡|Singapore|(^|[^A-Za-z])SG([^A-Za-z]|$)|🇸🇬)",
+    "US": r"(?i)(🇺🇸|美国|美國|United States|洛杉矶|圣何塞|西雅图|芝加哥|纽约|达拉斯|凤凰城|硅谷)",
+    "SG": r"(?i)(🇸🇬|新加坡|狮城|Singapore)",
+    "HK": r"(?i)(🇭🇰|香港|深港|沪港|京港|广港|Hong Kong|Hongkong)",
 }
 
 # 策略组。顺序对齐另外两份产物：精确规则组在前，宽泛的 Proxy 在后。
@@ -60,14 +79,20 @@ REGION_FILTERS = {
 # 地区组用 include-all + filter 自动收节点，并放一个 DIRECT 兜底 ——
 # mihomo 不允许组里一个候选都没有，用户订阅里没有美国节点时不能整个配置加载失败。
 GROUP_ORDER = (
-    ("Claude", ["US", "Proxy", "DIRECT"]),
-    ("AI", ["US", "SG", "Proxy", "DIRECT"]),
-    ("YouTube", ["Proxy", "US", "SG", "DIRECT"]),
-    ("Google", ["Proxy", "US", "SG", "DIRECT"]),
-    ("Exchange", ["SG", "Proxy", "DIRECT"]),
-    ("Telegram", ["Proxy", "US", "SG", "DIRECT"]),
+    ("Claude", ["US", "Proxy", "CN"]),
+    ("AI", ["US", "SG", "Proxy", "CN"]),
+    ("YouTube", ["Proxy", "US", "SG", "CN"]),
+    ("Google", ["Proxy", "US", "SG", "CN"]),
+    ("Exchange", ["SG", "HK", "Proxy", "CN"]),
+    ("Telegram", ["Proxy", "US", "SG", "CN"]),
+    # 银行 / 券商：这类业务最怕出口地区乱跳触发风控，单独建组把出口钉住
+    ("Banks", ["DIRECT", "HK", "Proxy"]),
+    ("Brokers", ["HK", "US", "Proxy"]),
     ("US", None),
     ("SG", None),
+    ("HK", None),
+    # 国内流量走这个组（默认直连，判错能一键切走），而不是直接写 DIRECT
+    ("CN", ["DIRECT", "Proxy"]),
     ("Proxy", None),
 )
 
@@ -142,18 +167,38 @@ def build_document(merge_text: str, extra_groups: dict) -> str:
         f"  - {rule_type},{value},Exchange" for rule_type, value in exchange["rules"]
     ]
 
-    # 插到兜底之前，别让 MATCH 把它们吃掉
+    # 手机端独有的分组：交易所、银行、券商（PC 版没有这块业务）。
+    # 插到兜底之前，别让 MATCH 吃掉；银行/券商放最前 —— 这类业务最怕被判错出口。
+    finance_lines = [
+        f"  - RULE-SET,{name},{policy}" for name, (_, policy) in FINANCE_PROVIDERS.items()
+    ]
     head, _, tail = rules.rpartition("  # 最终兜底")
     if not head:
         raise BuildError("规则源里找不到兜底注释，插交易所规则的位置不确定")
     rules = (
         head.rstrip("\n")
+        + "\n  # 银行 / 券商（手机端独有分组，最怕出口地区乱跳触发风控）\n"
+        + "\n".join(finance_lines)
         + "\n  # 交易所（手机端独有分组）\n"
         + "\n".join(exchange_lines)
         + "\n"
         + "  # 最终兜底"
         + tail
     )
+
+    # 银行/券商的规则集要一并加进 rule-providers，否则上面那些 RULE-SET 引用是悬空的
+    finance_providers = "\n".join(
+        f"  {name}:\n"
+        f"    type: http\n"
+        f"    behavior: classical\n"
+        f"    format: text\n"
+        f'    url: "{url}"\n'
+        f"    path: ./ruleset/{name}.txt\n"
+        f"    interval: 86400\n"
+        f"    proxy: Proxy"
+        for name, (url, _) in FINANCE_PROVIDERS.items()
+    )
+    providers = providers.rstrip("\n") + "\n" + finance_providers
 
     body = [
         *HEADER,

@@ -1,6 +1,6 @@
 # 手机端 Clash 覆写
 
-当前版本：`v0.2.8`
+当前版本：`v0.2.9`
 
 ## 适合谁
 
@@ -20,8 +20,11 @@
    `US` / `SG` 组 —— 效果等同 PC 的自动分组。
 2. 把策略名 `Proxies` 改成另两份产物统一用的 `Proxy`，并补上手机端独有的 `Exchange` 组。
 
-地区识别用的正则直接取自 PC 版 `config/Script.js` 的 `regionPatterns`，保证两边认出来的
-是同一批节点。
+地区识别只认旗帜 emoji、中文名、英文全称和城市名 —— **不收两字母缩写**，
+因为缩写会误收（节点叫「🇺🇸 美国 SG 中转」时美国节点会被 SG 组收走）。
+
+银行 / 券商的规则集来自 `LingJingMaster`（blackmatrix7 没有金融类），用
+`behavior: classical` + `format: text` 读纯文本 `.list`。
 
 ## 怎么用
 
@@ -46,12 +49,17 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/clash/clash
 | `AI` | `US` → `SG` → `Proxy` → 直连 | OpenAI、Gemini、Perplexity、Cursor 等 |
 | `YouTube` | `Proxy` → `US` → `SG` → 直连 | YouTube / googlevideo / ytimg |
 | `Google` | `Proxy` → `US` → `SG` → 直连 | Google 登录、Gmail、OAuth |
-| `Exchange` | `SG` → `Proxy` → 直连 | OKX、Bybit、Binance 等 |
-| `Telegram` | `Proxy` → `US` → `SG` → 直连 | Telegram 域名与 IP 段 |
-| `US` | 自动收美国节点 | 按节点名里的「美国 / US / 🇺🇸」等字样归类 |
-| `SG` | 自动收新加坡节点 | 按「新加坡 / Singapore / 🇸🇬」等字样归类 |
+| `Exchange` | `SG` → `HK` → `Proxy` | OKX、Bybit、Binance 等 |
+| `Telegram` | `Proxy` → `US` → `SG` | Telegram 域名与 IP 段 |
+| `Banks` | **直连** → `HK` → `Proxy` | 香港银行（汇丰、渣打、中银香港…） |
+| `Brokers` | `HK` → `US` → `Proxy` | 券商 / 港美股（富途、老虎…） |
+| `US` / `SG` / `HK` | 自动收对应节点 | 按节点名里的旗帜、中文名、英文全称、城市名归类 |
+| `CN` | 直连 | 国内流量。默认直连，判错能一键切走 |
 | `Proxy` | 全部节点 | 通用出口 |
-| `DIRECT` | —— | Clash 内置，不需要定义 |
+| `DIRECT` | —— | Clash 内置（局域网等仍直接用它） |
+
+**地区组不收两字母缩写**（`US` / `SG` / `HK`）。缩写会误收 —— 节点叫「🇺🇸 美国 SG 中转」时
+加词边界也挡不住，美国节点会被 SG 组收走。只认旗帜 emoji、中文名、英文全称和城市名。
 
 `US` / `SG` 里都放了一个 `DIRECT` 兜底：mihomo 不允许策略组一个候选都没有，
 订阅里没有美国节点时，整个配置不能因此加载失败。
@@ -64,7 +72,7 @@ https://raw.githubusercontent.com/reroc8/mobile-proxy-share-kit/main/clash/clash
 |---|---|---|
 | `karing/karing-diversion-rules.json` | Karing | 10（含 DIRECT） |
 | `shadowrocket/*.conf` | Shadowrocket | 10（含 DIRECT） |
-| `clash/clash-override.yaml` | mihomo 系 | 10（DIRECT 是内置的，只定义 9 个） |
+| `clash/clash-override.yaml` | mihomo 系 | 13（DIRECT 是内置的，只定义 12 个） |
 
 ## 还没验证的部分
 

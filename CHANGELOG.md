@@ -18,6 +18,25 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.9
+
+把前面几轮在 Shadowrocket 上验证过的做法同步到另外两份产物。
+
+- **Clash 那份扩到 13 组**：新增 `HK`、`Banks`、`Brokers`、`CN`。
+  国内流量改走 `CN` 组（组里默认直连），不再直接写 `DIRECT` —— 判错时能一键切走，
+  兜底也从 `MATCH,DIRECT` 改成 `MATCH,CN`。
+- **Clash 修掉和 Shadowrocket 同一个 bug**：地区过滤正则里有两字母缩写，
+  会误收节点（「🇺🇸 美国 SG 中转」会被 SG 组收走）。现在只认旗帜 emoji、中文名、
+  英文全称和城市名。
+- **Clash 的银行 / 券商规则集**用 `behavior: classical` + `format: text` 读 LingJing 的
+  纯文本 `.list`（blackmatrix7 没有金融类）。加了「RULE-SET 引用的规则集必须已声明」的测试。
+- **Karing 那份扩到 12 组**：新增 `🏦 银行`、`📈 券商`（36 + 84 条域名后缀）。
+  Karing 的内置规则集（`acl:` / `geosite:` / `geoip:`）里没有金融分类，只能写显式域名 ——
+  这些是**生成时**从 LingJing 清单转过来的快照，对方更新要重跑生成脚本。
+- 两份的组顺序与 Shadowrocket 对齐（精确业务组 → 地区组 → 国内 → 兜底）。
+- 测试 46 → 48 条。
+- **对应 PC 源：`v0.3.35`**
+
 ## v0.2.8
 
 - **主产物改名 `Shadowrocket.full.conf` → `星君分流.conf`**。小火箭配置列表里显示的就是文件名，

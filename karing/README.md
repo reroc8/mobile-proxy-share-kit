@@ -1,6 +1,6 @@
 # Karing 分流规则
 
-当前版本：`v0.2.8`
+当前版本：`v0.2.9`
 
 ## 适合谁
 
@@ -110,6 +110,7 @@ PC 版里按地区写死的域名现在都有了独立分组，不用再从别�
 | `RULE-SET,global-domain` / `tld-proxy` | `geosite:geolocation-!cn` |
 | `RULE-SET,telegramcidr` | `geoip:telegram` |
 | `RULE-SET,apple` / `icloud` | 不建组，按内置规则集与 IP 归属走 |
+| 银行 / 券商 | **手机端独有**。Karing 内置规则集里没有金融分类，域名是从 LingJingMaster 的清单转过来的**生成时快照** —— 对方更新了要重跑生成脚本 |
 | `PROCESS-NAME-REGEX` 进程级规则（钉钉、Muse） | 自定义分流组虽然支持进程名，但只在 PC 生效、名字要装完才知道，不预置 |
 | `RULE-SET,applications,DIRECT` | 同上，属于按本机应用配置的事 |
 | 交易所分组 | **手机端独有**，PC 版没有这块业务 |

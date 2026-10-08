@@ -45,6 +45,42 @@ from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
     parse_merge_rules,
 )
 
+# 银行 / 券商的域名。Karing 的内置规则集（acl: / geosite: / geoip:）里没有金融分类，
+# 只能写显式域名；这些是从 LingJingMaster 的规则集**生成时**转过来的。
+# 注意：这是快照 —— 对方更新了要重新跑生成脚本，不像 Shadowrocket 那份是运行时拉取。
+LINGJING = "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main"
+REMOTE_DOMAIN_GROUPS = {
+    "Banks": (f"{LINGJING}/HK_Banks_Direct.list", f"{LINGJING}/HSBC_HK.list"),
+    "Brokers": (f"{LINGJING}/HK_Broker.list",),
+}
+
+
+def fetch_remote_domain_rules(names: tuple[str, ...]) -> dict[str, list[str]]:
+    """把 Surge 风格的 .list 转成 Karing 的 domain / domain_suffix / domain_keyword 列表。"""
+    import urllib.request
+
+    out: dict[str, list[str]] = {"domain": [], "domain_suffix": [], "domain_keyword": []}
+    seen: set[tuple[str, str]] = set()
+    for url in names:
+        with urllib.request.urlopen(url, timeout=30) as response:
+            body = response.read().decode("utf-8", "replace")
+        for line in body.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = [part.strip() for part in line.split(",")]
+            kind, value = parts[0], parts[1] if len(parts) > 1 else ""
+            if not value:
+                continue
+            key = {"DOMAIN": "domain", "DOMAIN-SUFFIX": "domain_suffix",
+                   "DOMAIN-KEYWORD": "domain_keyword"}.get(kind)
+            if not key or (key, value) in seen:
+                continue
+            seen.add((key, value))
+            out[key].append(value)
+    return {k: v for k, v in out.items() if v}
+
+
 # 产物路径相对于「输出根目录」。默认是仓库根，可用 --out-dir 指向别处，
 # 供 scripts/check-drift.sh 生成到临时目录做比对。
 OUTPUT_SUFFIXES = (
@@ -109,6 +145,20 @@ GROUPS = (
         "outbound": "currentSelected",
         "clash_targets": ("Telegram",),
         "build_in": ("geoip:telegram",),
+    },
+    {
+        "name": "🏦 银行",
+        "outbound": "currentSelected",
+        "clash_targets": ("Banks",),
+        "remote": "Banks",
+        "build_in": (),
+    },
+    {
+        "name": "📈 券商",
+        "outbound": "currentSelected",
+        "clash_targets": ("Brokers",),
+        "remote": "Brokers",
+        "build_in": (),
     },
     {
         "name": "🇺🇸 美国",
@@ -220,6 +270,25 @@ def build_document(entries: list[tuple[str, str, str]]) -> dict:
             key, normalized = "domain_keyword", value
         if normalized not in bucket[key]:
             bucket[key].append(normalized)
+
+    # 银行 / 券商：Karing 内置规则集里没有金融分类，域名从远程清单转过来（生成时快照）
+    remote_cache: dict[str, dict[str, list[str]]] = {}
+    for group in GROUPS:
+        remote_key = group.get("remote")
+        if not remote_key:
+            continue
+        if remote_key not in REMOTE_DOMAIN_GROUPS:
+            raise BuildError(f"{group['name']} 组引用了未登记的远程域名组 {remote_key!r}")
+        if remote_key not in remote_cache:
+            remote_cache[remote_key] = fetch_remote_domain_rules(REMOTE_DOMAIN_GROUPS[remote_key])
+        bucket = by_group[group["name"]]
+        for key, values in remote_cache[remote_key].items():
+            for value in values:
+                normalized = value if key != "domain_suffix" else (
+                    value if value.startswith(".") else "." + value
+                )
+                if normalized not in bucket[key]:
+                    bucket[key].append(normalized)
 
     # PC 没有的分组，规则来自 scripts/extra-rules.json
     extra_definitions = load_extra_rules()

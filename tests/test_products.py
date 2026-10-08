@@ -43,6 +43,8 @@ EXPECTED_ORDER = (
     ("🌐 Google", "Google"),
     ("💱 交易所", "Exchange"),
     ("✈️ Telegram", "Telegram"),
+    ("🏦 银行", "Banks"),
+    ("📈 券商", "Brokers"),
     ("🇺🇸 美国", "US"),
     ("🇸🇬 新加坡", "SG"),
     ("🏠 国内直连", "DIRECT"),
@@ -698,10 +700,35 @@ class TestClashProduct(unittest.TestCase):
             out.append(fields[-1])
         return out
 
-    def test_group_names_and_order_match_other_products(self) -> None:
-        """DIRECT 是 Clash 内置，不在这里定义，其余必须一一对应。"""
-        expected = [policy for _, policy in EXPECTED_ORDER if policy != "DIRECT"]
-        self.assertEqual(self.group_names(), expected)
+    # Clash 那份按自己的能力来，比 Karing 多出 HK / Banks / Brokers / CN ——
+    # 它有 include-all + filter 能自动筛节点，不必和另两份逐组对齐。
+    EXPECTED_GROUPS = (
+        "Claude", "AI", "YouTube", "Google", "Exchange", "Telegram",
+        "Banks", "Brokers", "US", "SG", "HK", "CN", "Proxy",
+    )
+
+    def test_group_names_and_order(self) -> None:
+        """DIRECT 是 Clash 内置，不在这里定义。"""
+        self.assertEqual(self.group_names(), list(self.EXPECTED_GROUPS))
+
+    def test_no_bare_two_letter_codes_in_filters(self) -> None:
+        """和 Shadowrocket 同一坑：缩写会误收 —— 过滤正则里不能出现。"""
+        for group in self.doc["proxy-groups"]:
+            pattern = group.get("filter", "")
+            for code in ("US", "USA", "SG", "HK", "JP", "TW"):
+                self.assertNotIn(code, pattern, f"{group['name']} 的 filter 里有裸的 {code}")
+
+    def test_finance_providers_are_declared(self) -> None:
+        """RULE-SET 引用的规则集必须真的声明在 rule-providers 里，否则是悬空引用。"""
+        referenced = {
+            rule.split(",")[1] for rule in self.doc["rules"] if rule.startswith("RULE-SET,")
+        }
+        declared = set(self.doc["rule-providers"])
+        self.assertEqual(referenced - declared, set(), "有 RULE-SET 引用了未声明的规则集")
+        # 银行/券商用的是纯文本 .list，必须带 format: text（默认按 YAML 解析会读不出来）
+        for name in ("hk-banks", "hsbc-hk", "hk-brokers"):
+            self.assertIn(name, declared)
+            self.assertEqual(self.doc["rule-providers"][name].get("format"), "text")
 
     def test_every_rule_targets_a_known_group(self) -> None:
         known = set(self.group_names()) | self.BUILT_IN
@@ -711,8 +738,9 @@ class TestClashProduct(unittest.TestCase):
     def test_no_leftover_pc_policy_name(self) -> None:
         self.assertNotIn("Proxies", self.PATH.read_text(encoding="utf-8"))
 
-    def test_has_match_fallback_to_direct(self) -> None:
-        self.assertEqual(self.doc["rules"][-1], "MATCH,DIRECT")
+    def test_has_match_fallback(self) -> None:
+        """兜底走 CN 组（组里默认直连）。不直接写 DIRECT 是为了判错时能一键切走。"""
+        self.assertEqual(self.doc["rules"][-1], "MATCH,CN")
 
     def test_must_proxy_domain_still_goes_to_proxy(self) -> None:
         self.assertIn("DOMAIN-SUFFIX,tgalileo.com,Proxy", self.doc["rules"])
