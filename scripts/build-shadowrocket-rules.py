@@ -49,6 +49,7 @@ from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
     load_extra_rules,
     parse_args,
     parse_merge_rules,
+    supplemental_entries,
 )
 
 # 产物路径相对于「输出根目录」。默认是仓库根，可用 --out-dir 指向别处，
@@ -434,7 +435,7 @@ def summarize(rules: dict[str, list[tuple[str, str]]]) -> str:
 def main(argv: list[str]) -> int:
     try:
         source, out_dir = parse_args(argv)
-        rules = collect(parse_merge_rules(source))
+        rules = collect(parse_merge_rules(source) + supplemental_entries())
         source_version = fetch_source_version(source)
         slim = render(rules, include_proxy_group=False, source_version=source_version)
         full = render(rules, include_proxy_group=True, source_version=source_version)

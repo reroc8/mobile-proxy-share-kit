@@ -18,6 +18,25 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.12
+
+- **补 6 条 Claude 域名**：`claude.app`、`claude.dev`、`claude.new`、`claude.site`、
+  `modelcontextprotocol.io`、`sillylittleguy.org`。
+- 来源是对比同类项目 `VPSDance/ai-proxy-rules`（它整合 v2fly、blackmatrix7 等上游，
+  专门补 AI 服务的遗漏）—— 它的 Claude 清单 39 条，我们只有 11 条，交集 11 条。
+  逐条实测（`curl -sI -L` 看跳到哪里）之后只收了确认属于 Claude 的 6 条：
+  `claude.app → claude.ai/`、`claude.new → claude.ai/new/`、
+  `claude.site → anthropic.com/app-unavailable-in-region`、`sillylittleguy.org → claude.ai`。
+- **刻意没收两类**：① 共享服务（`datadoghq` / `usefathom` / `growthbook` / `intercom` /
+  `sentry` / `statsig`）—— 很多无关站点在用，收进来会劫持别的 App；② 实测无响应的
+  （`chatbotclaude.com` / `muthos.com` / `anthropic.com.cn` / `lcicat.org`）—— 宁缺毋滥。
+- 顺带确认**我们的国际 AI 组（93 条）比同类项目（38 条）更全**，只差 `sora.com` 之类。
+- 新增 `scripts/supplemental-domains.json`：PC 规则源里没有、手机端要补的域名统一放这里，
+  **四份产物共用一个入口**。测试 56 → 59 条，其中一条专门盯"四份都补上了" ——
+  只给某一份接上而漏掉另一份，是不报错的偏差。
+- 这些域名 PC 版原则上也该有，但那是另一个仓库的规则源，不在这里改。
+- **对应 PC 源：`v0.3.35`**
+
 ## v0.2.11
 
 - **Hiddify 那份补齐银行 / 券商两组**：生成时从 `LingJingMaster` 的清单转成显式域名

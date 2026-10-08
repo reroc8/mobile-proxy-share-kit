@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "PC 规则源里没有、但手机端应该有的域名。生成时并入对应分组。",
+    "",
+    "来源与筛选标准：对比同类项目 VPSDance/ai-proxy-rules（它整合了 v2fly、blackmatrix7",
+    "等上游并专门补 AI 服务的遗漏）后，只收**逐个实测确认属于该服务**的域名。",
+    "验证方式：看域名跳到哪里（curl -sI -L），例如 claude.app → claude.ai/。",
+    "",
+    "刻意不收的两类：",
+    "1. 共享服务（datadoghq / usefathom / growthbook / intercom / sentry / statsig 等）——",
+    "   很多无关站点都在用，收进来会劫持别的 App 的流量。",
+    "2. 实测无响应或行为可疑的域名 —— 宁可少收。",
+    "",
+    "注意：这些域名 PC 版原则上也该有，但那边的规则源是另一个仓库，不在这里改。"
+  ],
+  "Claude": [
+    "claude.app",
+    "claude.dev",
+    "claude.new",
+    "claude.site",
+    "modelcontextprotocol.io",
+    "sillylittleguy.org"
+  ]
+}

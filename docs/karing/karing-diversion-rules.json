@@ -12,7 +12,13 @@
         ".claudemcpclient.com",
         ".claudemcpcontent.com",
         ".claudeusercontent.com",
-        ".anthropic.com"
+        ".anthropic.com",
+        ".claude.app",
+        ".claude.dev",
+        ".claude.new",
+        ".claude.site",
+        ".modelcontextprotocol.io",
+        ".sillylittleguy.org"
       ],
       "domain": [
         "anthropic.auth0.com",

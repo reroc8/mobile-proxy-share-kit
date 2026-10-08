@@ -41,6 +41,7 @@ from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
     load_extra_rules,
     parse_args,
     read_source,
+    supplemental_entries,
 )
 
 OUTPUT_SUFFIX = Path("clash") / "clash-override.yaml"
@@ -167,6 +168,14 @@ def build_document(merge_text: str, extra_groups: dict) -> str:
         f"  - {rule_type},{value},Exchange" for rule_type, value in exchange["rules"]
     ]
 
+    # 补充域名：PC 规则源里没有、但手机端该有的。这份脚本走的是文本路径
+    # （直接切 Merge.yaml 的块），不走 parse_merge_rules，所以在这里单独插。
+    # 插在最前面 —— 精确规则本来就该优先于后面的规则集。
+    extra_lines = [
+        f"  - {rule_type},{value},{TARGET_RENAME.get(target, target)}"
+        for rule_type, value, target in supplemental_entries()
+    ]
+
     # 手机端独有的分组：交易所、银行、券商（PC 版没有这块业务）。
     # 插到兜底之前，别让 MATCH 吃掉；银行/券商放最前 —— 这类业务最怕被判错出口。
     finance_lines = [
@@ -176,7 +185,8 @@ def build_document(merge_text: str, extra_groups: dict) -> str:
     if not head:
         raise BuildError("规则源里找不到兜底注释，插交易所规则的位置不确定")
     rules = (
-        head.rstrip("\n")
+        "rules:" + "\n" + "\n".join(extra_lines) + "\n\n"
+        + head.split("rules:", 1)[-1].lstrip("\n").rstrip("\n")
         + "\n  # 银行 / 券商（手机端独有分组，最怕出口地区乱跳触发风控）\n"
         + "\n".join(finance_lines)
         + "\n  # 交易所（手机端独有分组）\n"

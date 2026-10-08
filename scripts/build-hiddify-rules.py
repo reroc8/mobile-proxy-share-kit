@@ -49,6 +49,7 @@ from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
     load_extra_rules,
     parse_args,
     parse_merge_rules,
+    supplemental_entries,
 )
 
 OUTPUT_SUFFIX = Path("hiddify")
@@ -245,7 +246,7 @@ def summarize(rules: list[dict]) -> str:
 def main(argv: list[str]) -> int:
     try:
         source, out_dir = parse_args(argv)
-        entries = parse_merge_rules(source)
+        entries = parse_merge_rules(source) + supplemental_entries()
         version = fetch_source_version(source)
         rules = build_rule_groups(entries, load_extra_rules())
         document = build_document(rules, version)

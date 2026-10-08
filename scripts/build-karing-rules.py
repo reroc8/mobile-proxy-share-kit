@@ -43,6 +43,7 @@ from mobile_rules import (  # noqa: E402  （必须先加 sys.path）
     load_extra_rules,
     parse_args,
     parse_merge_rules,
+    supplemental_entries,
 )
 
 # 银行 / 券商的域名。Karing 的内置规则集（acl: / geosite: / geoip:）里没有金融分类，
@@ -365,7 +366,9 @@ def summarize(document: dict) -> str:
 def main(argv: list[str]) -> int:
     try:
         source, out_dir = parse_args(argv)
-        document, substituted, supplementary = build_document(parse_merge_rules(source))
+        document, substituted, supplementary = build_document(
+            parse_merge_rules(source) + supplemental_entries()
+        )
     except BuildError as error:
         print(f"错误: {error}", file=sys.stderr)
         return 1

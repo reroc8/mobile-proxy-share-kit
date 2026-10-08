@@ -199,6 +199,13 @@ rule-providers:
     proxy: Proxy
 
 rules:
+  - DOMAIN-SUFFIX,claude.app,Claude
+  - DOMAIN-SUFFIX,claude.dev,Claude
+  - DOMAIN-SUFFIX,claude.new,Claude
+  - DOMAIN-SUFFIX,claude.site,Claude
+  - DOMAIN-SUFFIX,modelcontextprotocol.io,Claude
+  - DOMAIN-SUFFIX,sillylittleguy.org,Claude
+
   # 局域网和私有地址直连
   - RULE-SET,private-domain,CN
   - RULE-SET,private-ip,DIRECT,no-resolve

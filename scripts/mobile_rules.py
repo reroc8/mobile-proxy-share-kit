@@ -108,6 +108,29 @@ def parse_merge_rules(source: str) -> list[tuple[str, str, str]]:
     return entries
 
 
+SUPPLEMENTAL_PATH = Path(__file__).resolve().parent / "supplemental-domains.json"
+
+
+def supplemental_entries() -> list[tuple[str, str, str]]:
+    """PC 规则源里没有、手机端要补的域名，转成和 Merge.yaml 同形的 (类型, 值, 策略)。
+
+    这样各生成脚本只要在 parse_merge_rules 之后把结果接上就行，不必各自实现合并逻辑。
+    key 是 **PC 的策略名**（如 "Claude"），各脚本自己映射到本地组名。
+    """
+    if not SUPPLEMENTAL_PATH.is_file():
+        return []
+    data = json.loads(SUPPLEMENTAL_PATH.read_text(encoding="utf-8"))
+    out: list[tuple[str, str, str]] = []
+    for target, domains in data.items():
+        if target.startswith("_"):
+            continue
+        if not isinstance(domains, list):
+            raise BuildError(f"{SUPPLEMENTAL_PATH.name} 的 {target!r} 应该是域名数组")
+        for domain in domains:
+            out.append(("DOMAIN-SUFFIX", str(domain), target))
+    return out
+
+
 def load_extra_rules() -> dict:
     """读取 PC 没有、手机端自己补充的分组定义。两个生成脚本共用这一份。"""
     if not EXTRA_RULES_PATH.is_file():

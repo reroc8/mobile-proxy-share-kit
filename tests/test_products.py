@@ -669,6 +669,52 @@ class TestRemoteRuleSets(unittest.TestCase):
                 self.assertGreater(len(body.splitlines()), 5, f"{url} 内容过短")
 
 
+class TestSupplementalDomains(unittest.TestCase):
+    """scripts/supplemental-domains.json 里补的域名，必须真的落进**每一份**产物。
+
+    这个机制是"PC 规则源里没有、手机端要补"的口子。它最容易出的问题是：
+    给某一份产物接上了、漏了另一份 —— 那种偏差不会有任何报错。
+    """
+
+    PATH = REPO_ROOT / "scripts" / "supplemental-domains.json"
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.data = json.loads(cls.PATH.read_text(encoding="utf-8"))
+        cls.domains = [
+            domain
+            for target, values in cls.data.items() if not target.startswith("_")
+            for domain in values
+        ]
+
+    def test_file_has_entries(self) -> None:
+        self.assertTrue(self.domains, "补充域名表是空的，检查是不是被清掉了")
+
+    def test_domains_land_in_every_product(self) -> None:
+        shadowrocket = SHADOWROCKET_FILES[1].read_text(encoding="utf-8")
+        karing = (REPO_ROOT / "karing" / "karing-diversion-rules.json").read_text(encoding="utf-8")
+        clash = (REPO_ROOT / "clash" / "clash-override.yaml").read_text(encoding="utf-8")
+        hiddify = (REPO_ROOT / "hiddify" / "hiddify-route-rules.json").read_text(encoding="utf-8")
+        for domain in self.domains:
+            self.assertIn(domain, shadowrocket, f"{domain} 没进 Shadowrocket")
+            self.assertIn(domain.lstrip("."), karing, f"{domain} 没进 Karing")
+            self.assertIn(domain, clash, f"{domain} 没进 Clash")
+            self.assertIn(domain.lstrip("."), hiddify, f"{domain} 没进 Hiddify")
+
+    def test_no_shared_services(self) -> None:
+        """共享服务不能收 —— 很多无关站点都在用，收进来会劫持别的 App 的流量。
+
+        这些域名是从同类项目对比出来的，逐个实测确认属于该服务之后才收的。
+        """
+        banned = ("datadoghq", "usefathom", "growthbook", "intercom", "sentry",
+                  "segment.io", "statsig", "livekit", "launchdarkly")
+        for domain in self.domains:
+            for pattern in banned:
+                self.assertNotIn(
+                    pattern, domain, f"{domain} 是共享服务，不该收进补充分组"
+                )
+
+
 class TestHiddifyProduct(unittest.TestCase):
     """Hiddify 那份：规则 JSON + 一条一键导入链接。
 
