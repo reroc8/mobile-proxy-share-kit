@@ -18,6 +18,18 @@
 `# Source: ...`。Karing 的 JSON 是 Karing 私有格式，不往里塞自定义字段（避免导入被拒），
 对应关系看这里的记录。
 
+## v0.2.11
+
+- **Hiddify 那份补齐银行 / 券商两组**：生成时从 `LingJingMaster` 的清单转成显式域名
+  （36 + 84 条）。Hiddify 的 `rule_set` 只认 `.srs`，吃不了那个格式，所以是快照。
+- **国内直连接上官方规则集兜底**：引 `hiddify-geo` 的 `country/geosite-cn.srs` +
+  `country/geoip-cn.srs`。国内域名量级太大，写显式不现实。
+  Hiddify 的 `rule_set` 字段收的就是 `.srs` 的 URL 数组（见它的 `rules_notifier.dart`）。
+- 组数 9 → 11。导入链接从 6554 涨到 10546 字符。
+- 测试 54 → 56 条：规则集必须指向 `hiddify-geo` 且是 `.srs`；银行/券商域名数量下限
+  （防远程清单没拉到却静默通过）。
+- **对应 PC 源：`v0.3.35`**
+
 ## v0.2.10
 
 - **新增第四份产物 `hiddify/`**，覆盖 Hiddify（sing-box 内核）。

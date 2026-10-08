@@ -727,6 +727,31 @@ class TestHiddifyProduct(unittest.TestCase):
         self.assertEqual(len(domestic), 1)
         self.assertEqual(domestic[0]["outbound"], "direct")
 
+    def test_rule_sets_point_at_hiddify_geo(self) -> None:
+        """国内兜底靠官方 .srs 规则集 —— 几十万条域名写显式是不现实的。
+
+        Hiddify 的 rule_set 字段收的是 .srs 的 URL 数组（见它的 rules_notifier.dart）。
+        指向别处或写成别的格式都会静默拉不到。
+        """
+        sets = [url for rule in self.doc["rules"] for url in rule.get("rule_set", [])]
+        self.assertTrue(sets, "一个规则集都没有 —— 国内兜底是不是被摘掉了")
+        for url in sets:
+            self.assertTrue(
+                url.startswith("https://raw.githubusercontent.com/hiddify/hiddify-geo/rule-set/"),
+                f"规则集不在 Hiddify 官方仓库里：{url}",
+            )
+            self.assertTrue(url.endswith(".srs"), f"不是 .srs 格式：{url}")
+
+    def test_finance_groups_have_domains(self) -> None:
+        for name in ("🏦 银行", "📈 券商"):
+            rule = next((r for r in self.doc["rules"] if r["name"] == name), None)
+            self.assertIsNotNone(rule, f"缺少 {name} 组")
+            self.assertGreater(
+                sum(len(rule.get(k, [])) for k in ("domain", "domain_suffix")),
+                20,
+                f"{name} 的域名太少，远程清单可能没拉到",
+            )
+
 
 class TestClashProduct(unittest.TestCase):
     """Clash 覆写产物：与另外两份同源、同组名、同规则目标。

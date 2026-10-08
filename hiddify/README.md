@@ -60,18 +60,31 @@ hiddify:///settings/routing-options?routeRule=<base64>
 | `🌐 Google` | proxy | Google 登录、Gmail、OAuth |
 | `💱 交易所` | proxy | OKX、Bybit、Binance 等 |
 | `✈️ Telegram` | proxy | Telegram 域名 |
+| `🏦 银行` | proxy | 香港银行（汇丰、渣打、中银香港…） |
+| `📈 券商` | proxy | 券商 / 港美股（富途、老虎…） |
 | `🌍 地区锁定` | proxy | 必须走特定地区的域名（`mail.com`、`lexmount.com`、`muse` 系、`dola.com`） |
-| `🏠 国内直连` | direct | 国内域名 + 国产 AI 服务 |
+| `🏠 国内直连` | direct | 国内域名 + 国产 AI 服务，**外挂两个官方规则集兜底** |
 | `🚀 代理` | proxy | 通用海外域名 |
 
 顺序就是 `list_order` —— Hiddify 按这个顺序匹配，精确的排前面。
 
+## 数据从哪来
+
+- **AI / 交易所 / 地区锁定**：显式域名，从 PC 规则源生成。
+- **银行 / 券商**：PC 规则源里没有，**生成时**从 `LingJingMaster` 的清单转成显式域名
+  （36 + 84 条）。这是快照 —— 对方更新了要重跑生成脚本。
+- **国内兜底**：引 Hiddify 官方的 `.srs` 规则集（`country/geosite-cn.srs` +
+  `country/geoip-cn.srs`）。国内域名量级太大，写显式不现实。
+
+> Hiddify 的 `rule_set` 字段收的是 **`.srs` 文件的 URL 数组**（见它自己的
+> `rules_notifier.dart`）。官方规则集仓库只提供「按国家」和「拦截」两类，没有服务分类，
+> 所以 AI / 交易所这些只能用显式域名。
+
 ## 还没有的
 
-- **银行 / 券商**：它们在 PC 规则源里不存在，另外三份产物是引 `LingJingMaster` 的规则集。
-  这份要加得引入同样的外部数据源。
-- **海外域名兜底**：`Global_Domain` 那种三万多条的规则集还没接。目前没命中的域名
-  由 Hiddify 自己的兜底逻辑处理，不受这份控制。
+- **海外域名兜底**：`Global_Domain` 那种三万多条的规则集还没接 ——
+  Hiddify 官方仓库里没有对应分类，要用别处的 `.srs` 得先确认格式兼容。
+  目前没命中的域名由 Hiddify 自己的兜底逻辑处理，不受这份控制。
 
 ## 注意
 

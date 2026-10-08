@@ -72,15 +72,65 @@ GROUPS = (
     ("🌐 Google", OUTBOUND_PROXY, ("Google",)),
     ("💱 交易所", OUTBOUND_PROXY, ("Exchange",)),
     ("✈️ Telegram", OUTBOUND_PROXY, ("Telegram",)),
-    # 银行 / 券商暂时没有：它们在 PC 规则源里不存在，需要额外数据源（另外三份产物
-    # 是引 LingJing 的规则集）。等这一层做扎实再加。
+    ("🏦 银行", OUTBOUND_PROXY, ()),
+    ("📈 券商", OUTBOUND_PROXY, ()),
     ("🌍 地区锁定", OUTBOUND_PROXY, ("US", "SG")),
     ("🏠 国内直连", OUTBOUND_DIRECT, ("DIRECT",)),
     ("🚀 代理", OUTBOUND_PROXY, ("Proxy", "Proxies")),
 )
 
+# Hiddify 官方的规则集仓库。`rule_sets` 字段收的是 .srs 文件的 URL 数组
+# （见 hiddify-app 的 rules_notifier.dart，它自己就是这么引的）。
+#
+# 注意：这个仓库只有「按国家」和「拦截」两类，没有服务分类 ——
+# 所以 AI / 交易所这些还得靠显式域名，只有国内兜底能用上它。
+HIDDIFY_GEO = "https://raw.githubusercontent.com/hiddify/hiddify-geo/rule-set"
+
 # 额外来源：这些组在 Merge.yaml 里没有对应策略，规则写在 extra-rules.json
 EXTRA_GROUPS = {"💱 交易所": "Exchange"}
+
+# 用远程规则集兜底的组：域名清单太长（国内域名几十万条），写显式域名不现实。
+RULE_SET_GROUPS = {
+    "🏠 国内直连": (
+        f"{HIDDIFY_GEO}/country/geosite-cn.srs",
+        f"{HIDDIFY_GEO}/country/geoip-cn.srs",
+    ),
+}
+
+# 银行 / 券商的域名。PC 规则源里没有这两块，另外三份产物引的是 LingJingMaster 的规则集；
+# 这里同样在**生成时**把它转成显式域名（Hiddify 的 rule_sets 只认 .srs，吃不了那个格式）。
+LINGJING = "https://raw.githubusercontent.com/LingJingMaster/Shadowrocket-Rules/refs/heads/main"
+REMOTE_DOMAIN_GROUPS = {
+    "🏦 银行": (f"{LINGJING}/HK_Banks_Direct.list", f"{LINGJING}/HSBC_HK.list"),
+    "📈 券商": (f"{LINGJING}/HK_Broker.list",),
+}
+
+
+def fetch_remote_domain_rules(urls: tuple[str, ...]) -> dict[str, list[str]]:
+    """把 Surge 风格的 .list 转成 Hiddify 的 domain / domain_suffix / domain_keyword。"""
+    import urllib.request
+
+    out: dict[str, list[str]] = {"domain": [], "domain_suffix": [], "domain_keyword": []}
+    seen: set[tuple[str, str]] = set()
+    for url in urls:
+        with urllib.request.urlopen(url, timeout=30) as response:
+            body = response.read().decode("utf-8", "replace")
+        for line in body.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = [part.strip() for part in line.split(",")]
+            kind = parts[0]
+            value = parts[1] if len(parts) > 1 else ""
+            if not value:
+                continue
+            key = {"DOMAIN": "domain", "DOMAIN-SUFFIX": "domain_suffix",
+                   "DOMAIN-KEYWORD": "domain_keyword"}.get(kind)
+            if not key or (key, value) in seen:
+                continue
+            seen.add((key, value))
+            out[key].append(value)
+    return {k: v for k, v in out.items() if v}
 
 # Merge.yaml 里靠 RULE-SET 表达、Hiddify 这边没法用同款写法的，直接跳过。
 SKIP_TYPES = ("RULE-SET", "IP-CIDR", "IP-CIDR6", "IP-ASN", "GEOIP", "PROCESS-NAME",
@@ -126,6 +176,15 @@ def build_rule_groups(entries: list[tuple[str, str, str]], extra: dict) -> list[
         if normalized not in bucket[key]:
             bucket[key].append(normalized)
 
+    # 银行 / 券商的域名：生成时从远程清单转成显式域名
+    for name, urls in REMOTE_DOMAIN_GROUPS.items():
+        bucket = by_name[name]
+        for key, values in fetch_remote_domain_rules(urls).items():
+            for value in values:
+                normalized = value if key != "domain_suffix" else value.lstrip(".")
+                if normalized not in bucket[key]:
+                    bucket[key].append(normalized)
+
     for name, extra_key in EXTRA_GROUPS.items():
         if extra_key not in extra:
             raise BuildError(f"{name} 组引用了 extra-rules.json 里不存在的 {extra_key!r}")
@@ -143,12 +202,16 @@ def build_rule_groups(entries: list[tuple[str, str, str]], extra: dict) -> list[
     rules: list[dict] = []
     for index, (name, _, _) in enumerate(GROUPS, start=1):
         bucket = by_name[name]
-        if not any(bucket[key] for key in ("domain", "domain_suffix", "domain_keyword")):
+        has_domains = any(bucket[key] for key in ("domain", "domain_suffix", "domain_keyword"))
+        remote_sets = RULE_SET_GROUPS.get(name, ())
+        if not has_domains and not remote_sets:
             raise BuildError(
-                f"{name} 组没有任何规则；检查 Merge.yaml 或 extra-rules.json 是否还包含对应内容"
+                f"{name} 组没有任何规则；检查 Merge.yaml / extra-rules.json / 远程清单是否还有内容"
             )
         # 空数组不写出去，保持产物干净
         rule = {key: val for key, val in bucket.items() if val}
+        if remote_sets:
+            rule["rule_set"] = list(remote_sets)
         rule["list_order"] = index
         rules.append(rule)
     return rules
@@ -173,6 +236,8 @@ def summarize(rules: list[dict]) -> str:
             for key in ("domain_suffix", "domain", "domain_keyword")
             if key in rule
         )
+        if rule.get("rule_set"):
+            counts = f"{counts} rule_set={len(rule['rule_set'])}".strip()
         lines.append(f"  {rule['name']:<14} {rule['outbound']:<7} {counts}")
     return "\n".join(lines)
 
